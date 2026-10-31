@@ -4,7 +4,7 @@ Private prediction markets for friends. React/Vite on Vercel, Supabase Auth/Post
 
 ## Use
 
-Open https://multimarche.vercel.app. Join with an invitation, then log in with your username and password. New accounts receive 1,000 credits from treasury.
+Open https://multimarche.vercel.app. The signed-out page only shows login and invite registration. No market previews, navigation or member data are shown. Join with an invitation, then log in with your username and password. New accounts receive 1,000 credits from treasury.
 
 - **Moon / sun button:** switch dark mode; your choice is saved on this device.
 - **Escape ×3:** redirect to the school’s itslearning CourseCards page; signed-in members also broadcast to other open app tabs.
@@ -12,6 +12,7 @@ Open https://multimarche.vercel.app. Join with an invitation, then log in with y
 - **Footer question mark:** detailed market, trading, settlement, counters and emergency help.
 - **Account icon:** edit nickname, username or password. Changing username/password requires your current password. Nicknames are displayed to the group; usernames are used for login.
 - **Create market:** enter a binary question and explicit Yes/No meanings and a confirmation count (minimum/default 2). There are no app-level character limits on event questions, meanings or resolution notes. Close in 15/40/60/120 minutes, 24 hours, a custom number of minutes, or at a specific date/time. There is no emoji selection.
+- **Online avatars:** authenticated members see other recently active members. Server-owned, per-tab presence leases update with Supabase Realtime, heartbeat every 20 seconds and expire after 60 seconds. Hidden tabs go offline; closing one tab does not remove another device. Guests cannot read or publish presence.
 - **Home → Your bets:** a countdown, estimated P/L at current prices, and net Yes/No settlement results for up to six active markets; View portfolio shows all positions.
 - **History:** all settled markets, including archived ones, with confirmers, admin overrides, final holdings, spend, sales, payouts and net profit/loss.
 - **Markets:** buy Yes/No shares, or sell shares you own before trading closes. A winning share pays one credit. The selected number of distinct members must agree on normal results. A confirmed Void pays 0.5 credits per share.
@@ -24,6 +25,9 @@ The existing `arylance` account has admin permissions, managed in a private data
 The **Admin** page opens with all users and current credit balances. Its submenus can:
 
 - Delete a member’s login and group access after confirmation. The caller cannot delete themselves. Financial records, profile identity and votes are retained; usernames stay reserved. Removed accounts are hidden from the leaderboard. Auth soft-deletion is irreversible; a failed Auth cleanup can be retried under Show removed users. Existing JWTs are denied immediately by the active-membership check.
+- Change any active member’s nickname. User cards provide search, keyboard/hover statistics and quick nickname, credit, timeout, role and deletion actions.
+- Apply 5/15/60-minute, one-day or one-week timeouts, and unfreeze early. Timeouts block trades, creation, results, counters and comments on the server while browsing and automatic payouts remain available. They expire automatically. Admins must be demoted before a timeout; self-timeouts and promotion during a timeout are blocked.
+- Delete settled events from history and restore them later. Market content is hidden from ordinary members, while financial records, supply and payouts are preserved.
 - Grant/revoke admin access, with a guard that preserves at least one active admin.
 - Transfer existing treasury credits to a member, with a recorded reason.
 - Explicitly issue new credits into treasury. This increases total supply, requires a separate acknowledgement, and creates an issuance record.
@@ -116,8 +120,16 @@ This remains a small-group virtual game, not full Polymarket parity: no central 
 
 ## Current interface and maintenance
 
+Guest access is limited to a dedicated login/invite page. User help covers normal game use, pricing, sensitivity, selling and payouts. Transactions and activity logs are collapsed by default.
+
 Themes use black/white/neutral grays with green Yes and red No hover/focus states, with full-page backgrounds and a footer at the viewport bottom on short pages. Categories are hidden for now; stored category values remain for future restoration. Large buys (100+ credits or 25% of cash) require a review showing cost, slippage, shares and potential payout. A confirmed trade uses the reviewed parameters and an idempotent request ID.
 
 Normal result notes are optional. Voting once per account and the selected confirmation count are enforced in PostgreSQL. Withdrawing a vote keeps trading paused while other confirmations remain. Admin overrides, role changes and credit actions stay recorded. Notification read markers are private to each account.
 
 Weekly availability checks and Dependabot PRs are configured in GitHub. See [MAINTENANCE.md](MAINTENANCE.md) for hosting limitations, private backups, update reviews, recovery and the remaining GitHub-to-Vercel connection step. No paid upgrade or automatic full database backup was configured.
+
+## Realised-loss joke prompt
+
+Before a buy, the app obtains the caller’s server-calculated 24-hour realised P/L. Average acquisition cost is allocated proportionally to sold shares, and remaining basis is realised at settlement. Open purchases and unrealised price changes are not treated as losses. Effective bankroll is current cash plus open acquisition basis minus the period’s realised net result, including external funding. A cent-rounded net loss of at least 50% triggers the virtual-only satire prompt with “Yes” and “Hell yeah!”; either continues the ordinary trade review. A per-user session acknowledgement suppresses repeats until the realised result changes. This does not alter pricing, funds or normal large-bet confirmation.
+
+`tests/economy-v6.sql` verifies nickname/admin authorization, timeouts and automatic expiry, legacy API guards, deleted/restored history, settlement during a timeout, realised-loss accounting, open-buy exclusion, presence ownership/multiple tabs/expiry and guest denial, entirely inside a rolled-back transaction.
