@@ -11,5 +11,4 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm test
-      - run: git diff --exit-code -- src/audit-contract.json
       - run: npm run build

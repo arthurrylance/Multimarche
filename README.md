@@ -7,13 +7,13 @@ Private prediction markets for friends. React/Vite on Vercel, Supabase Auth/Post
 Open https://multimarche.vercel.app. Join with an invitation, then log in with your username and password. New accounts receive 1,000 credits from treasury.
 
 - **Moon / sun button:** switch dark mode; your choice is saved on this device.
-- **Escape ×3:** blank the screen immediately; reload to return.
-- **Notifications bell:** ended markets, pending confirmations and recent outcomes; unread updates open on reload/home.
-- **Footer question mark:** detailed market, trading, settlement and blockchain help.
+- **Escape ×3:** redirect to the school’s itslearning CourseCards page; signed-in members also broadcast to other open app tabs.
+- **Notifications bell:** ended markets, pending confirmations and recent outcomes; unread updates appear in a top banner on reload/home. Click the banner or its cross to acknowledge them; the bell keeps the unread count until then.
+- **Footer question mark:** detailed market, trading, settlement, counters and emergency help.
 - **Account icon:** edit nickname, username or password. Changing username/password requires your current password. Nicknames are displayed to the group; usernames are used for login.
 - **Create market:** enter a binary question and explicit Yes/No meanings and a confirmation count (minimum/default 2). There are no app-level character limits on event questions, meanings or resolution notes. Close in 15/40/60/120 minutes, 24 hours, a custom number of minutes, or at a specific date/time. There is no emoji selection.
 - **Markets:** buy Yes/No shares, or sell shares you own before trading closes. A winning share pays one credit. The selected number of distinct members must agree on normal results. A confirmed Void pays 0.5 credits per share.
-- **Admin → Transactions:** inspect transfers, verify the hash chain and supply, export records, view admin actions, and check public-chain publication status.
+- **Admin → Transactions:** inspect transfers, verify the hash chain and supply, export records, and view recorded actions.
 
 The existing `arylance` account has admin permissions, managed in a private database table. There is no shared admin password or user-editable role claim.
 
@@ -58,21 +58,15 @@ The upgrade establishes an explicit **100,000-credit opening supply**. It preser
 
 Each financial operation appends a SHA-256-linked record. Updates and deletes of audit/admin history are rejected. Application clients cannot write balances, roles, reserves, trades, results or audit history directly. The exported record chain can be replayed independently with `src/audit.mjs`, which checks hashes, funded transfers, ordering and total supply using exact integer arithmetic.
 
-The upgrade's genesis records opening account balances and a checksum of earlier credit history. It does not pretend that pre-upgrade activity was already on a blockchain. Supabase project owners retain database control; independent public-chain publication makes changes to previously published history detectable.
+The upgrade's genesis records opening account balances and a checksum of earlier credit history. This is a database transaction ledger, not a public blockchain. Supabase project owners retain database control. Wallet connection, public-chain publication and Solidity tooling have been removed. Historical migration definitions are retained so fresh installations still apply in order; the latest migration removes the wallet configuration RPC.
 
-## Sepolia setup — one wallet step remains
+## Live counters and emergency redirect
 
-**Blockchain publication is not active until an admin deploys/connects the contract and publishes records.** No deployed address or confirmation is fabricated. Trading and balances remain authoritative in Supabase; the Solidity contract records public audit transactions, not an on-chain currency or betting engine.
+Enable **Track a live count** when creating a market, with a label such as “Etcetera count”. Creators and admins can also add a counter to existing unresolved markets. Members can increment while trading is open; admins can correct counts while unresolved. Each change has an actor, timestamp and idempotent request ID. Counts never go negative, change prices, or resolve a market automatically.
 
-1. Use a separate browser test wallet, such as MetaMask, with Sepolia test ETH. Faucet references: https://ethereum.org/developers/docs/networks/#sepolia.
-2. Sign in as an admin and open **Admin → Transactions**.
-3. Choose **Connect wallet & deploy on Sepolia** and approve the wallet transaction. The app switches to chain ID `11155111` and refuses other public networks.
-4. Choose **Publish next 10 records**. Each batch is independently verified, signed in the deployment wallet, and marked published only after confirmation.
-5. Repeat as new records accumulate. Other members can inspect the contract on Sepolia Etherscan and compare its confirmed hash/height with the local ledger.
+Triple Escape within 1.5 seconds hides the app immediately and navigates to `https://nordangliaeducation.itslearning.com/CourseCards`. Signed-in members send an authenticated, rate-limited signal before leaving, using a keepalive request with a 900ms navigation fallback. Realtime and a 10-second fallback poll redirect other open app tabs, including signed-out visitors. Same-browser tabs also receive a local storage signal. Guests cannot broadcast globally.
 
-Only the deployment wallet can append to the contract. A partial setup can be recovered by entering the confirmed contract address and deployment transaction; the app checks the owner, version and receipt. No wallet private key is requested or stored. The only transaction fees are test-network gas; no real-value tokens are used.
-
-Public payloads include hashed account/market identifiers, amounts, fixed operation types, and supply changes. Usernames, nicknames, school questions, resolution evidence and free-form admin notes are not published. Publishing is manual; there is no automatic relayer holding a server wallet key. Unpublished records are clearly labeled.
+Known devices catch up on a missed signal after reconnecting. A brand-new browser only acts on a signal from the previous two minutes, so an old emergency does not block future visits. Acknowledged versions are stored locally to avoid redirect loops. Browsers that are closed and other applications cannot be controlled; delivery depends on connectivity.
 
 ## Development and deployment
 
@@ -91,7 +85,6 @@ The connected Supabase project is `vakkbgsooubqpmdekixr`. Its public URL and pub
 - `supabase/migrations/` contains the treasury/profile/admin/audit upgrades, already applied to the connected project.
 - `supabase/functions/register/` implements invited registration.
 - `supabase/functions/account/` verifies the caller's JWT, reauthenticates sensitive changes and updates only that user's Auth identity. A database trigger keeps the profile and login username synchronized in the same Auth transaction.
-- `contracts/MultimarcheAudit.sol` is the public testnet audit contract; `npm run compile:contract` regenerates its checked-in ABI/bytecode.
 - `vercel.json` builds the Vite app into `dist` and configures SPA routing and headers.
 
 For a fresh Supabase project, apply the original bootstrap and all upgrade migrations in filename order, deploy the two functions, issue an invitation, and grant the intended owner an admin role via the SQL editor:
@@ -109,17 +102,17 @@ Source is saved in https://github.com/arthurrylance/Multimarche. Vercel currentl
 
 - Pricing tests cover symmetric cost, budget inversion, reversibility and numeric stability.
 - Audit tests cover exact balances, explicit issuance, tampering and unfunded transfers.
-- Contract tests execute compiled Solidity in a local EVM, checking owner authorization, sequential append, payload hashes, replay rejection and historical events.
+- Emergency tests exercise the actual redirect hook: authenticated keepalive broadcast, local guest navigation, and remote signal acknowledgement.
 - Account endpoint tests check JWT validation, user ownership, current-password requirements, validation and local-only reauthentication-session revocation.
-- `tests/economy.sql`, `tests/economy-v2.sql`, and `tests/economy-v3.sql` are owner-run rollback-only SQL tests. The v2 suite checks funded reserves, conservation constraints, role spoofing, profile sync, audited admin operations, and one-time settlement.
+- `tests/economy.sql`, `tests/economy-v2.sql`, `tests/economy-v3.sql`, and `tests/economy-v4.sql` are owner-run rollback-only SQL tests. The v2 suite checks funded reserves, conservation constraints, role spoofing, profile sync, audited admin operations, and one-time settlement.
 
-Tests do not imply that a public Sepolia contract has been deployed or funded. Browser preview infrastructure has been unavailable in this workspace; production HTTP/assets and service-level checks are separate from visual browser verification.
+The v4 SQL suite checks counter access, idempotency, conservation and the shared emergency signal inside a rolled-back transaction, without redirecting live users. Private account UI flows are covered by service-level checks; public production UI is checked separately in a browser.
 
 This remains a small-group virtual game, not full Polymarket parity: no central limit order book, limit orders, crypto deposits/withdrawals, real-money value, automated oracle or multi-outcome markets. The UI displays the latest 500 trades, 100 comments and 100 personal ledger entries. Complete post-upgrade financial records can be exported from Admin → Transactions.
 
 ## Current interface and maintenance
 
-Themes use black/white/neutral grays, with full-page backgrounds and a footer at the viewport bottom on short pages. Categories are hidden for now; stored category values remain for future restoration. Large buys (100+ credits or 25% of cash) require a review showing cost, slippage, shares and potential payout. A confirmed trade uses the reviewed parameters and an idempotent request ID.
+Themes use black/white/neutral grays with green Yes and red No hover/focus states, with full-page backgrounds and a footer at the viewport bottom on short pages. Categories are hidden for now; stored category values remain for future restoration. Large buys (100+ credits or 25% of cash) require a review showing cost, slippage, shares and potential payout. A confirmed trade uses the reviewed parameters and an idempotent request ID.
 
 Normal result notes are optional. Voting once per account and the selected confirmation count are enforced in PostgreSQL. Withdrawing a vote keeps trading paused while other confirmations remain. Admin overrides, role changes and credit actions stay recorded. Notification read markers are private to each account.
 

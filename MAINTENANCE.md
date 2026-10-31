@@ -12,7 +12,7 @@ There is no scheduled expiry of this app. Its continued operation depends on the
 
 ## What is automated
 
-- GitHub CI installs exact locked dependencies, compiles/tests the audit contract, runs application tests, and builds TypeScript/Vite on pushes and PRs.
+- GitHub CI installs exact locked dependencies, runs application tests, and builds TypeScript/Vite on pushes and PRs.
 - Availability checks run on Mondays at 07:17 UTC and can be run manually in Actions. They check the public website, its JavaScript entry and Supabase Auth health. They do not exercise a signed-in user's complete workflow, validate every database table, back up data or guarantee uptime.
 - Dependabot opens weekly npm and GitHub Actions update PRs. Updates are not automatically merged or deployed. Review compatibility and passing CI before accepting them.
 - GitHub may disable scheduled workflows on public repositories after 60 days without repository activity. Check that Actions remains enabled. GitHub's workflow notifications depend on your account notification settings.
@@ -25,7 +25,7 @@ Reference: https://docs.github.com/en/actions/how-tos/manage-workflow-runs/disab
 2. **Usage limits or account changes.** Traffic, database size, egress limits, an expired paid plan, an account suspension, or deleting/pausing a project can interrupt operation.
 3. **Credentials/configuration.** Rotating the public key or moving the database requires updating the app's Supabase URL/key. Never expose service keys through `VITE_` variables.
 4. **Breaking changes.** Dependency or provider changes can require code and migration updates. Keep the lockfile, tests, migration history and versioned source.
-5. **Owner access.** Losing access to the service accounts or a separately configured blockchain wallet can block maintenance. Retain account recovery methods privately.
+5. **Owner access.** Losing access to the service accounts can block maintenance. Retain account recovery methods privately.
 
 Vercel's current production deployment is protected from normal age-based deployment-retention deletion. Older deployment history can be removed; retention is not a guarantee against deletion by an owner, account restrictions, quota problems or outages.
 
@@ -40,7 +40,7 @@ Provider references:
 
 Keep a private, restorable database backup at least weekly while the game is active and before applying migrations. Follow the current Supabase backup/export guide; include the application's public schema, its private accounting/admin/invitation tables, and the Auth data needed for account recovery. Test a restore into a separate non-production project.
 
-Free-tier transaction exports from this app are **not** complete database backups. They verify financial history but do not restore users/password identities, markets, permissions, functions, invitations or settings. The Sepolia audit contract is likewise not a database backup.
+Free-tier transaction exports from this app are **not** complete database backups. They verify financial history but do not restore users/password identities, markets, permissions, functions, invitations or settings.
 
 Supabase recommends manual off-site exports for Free projects. Paid plans offer daily backups with plan-specific retention. No automatic full database backup has been configured here, because it requires owner-level credentials and a private storage destination. Never put database dumps, connection passwords, service keys or Auth password hashes into this public repository or public Actions artifacts.
 
@@ -56,7 +56,7 @@ Until that connection is made, source changes need a deliberate Vercel deploymen
 
 1. Review failed health checks and provider quota/pause emails.
 2. Back up privately before schema changes.
-3. Review dependency-update PRs, run tests/build and check compatibility. Solidity compiler updates require reviewing the regenerated contract artifact; an already deployed contract does not upgrade itself.
+3. Review dependency-update PRs, run tests/build and check compatibility.
 4. Apply new migrations exactly once, preserving existing data and accounting.
 5. Deploy the intended commit; verify the public page and a signed-in account's market, balance, admin and notification flows.
 6. Confirm the ledger verifies and total accounts still equal issued supply.

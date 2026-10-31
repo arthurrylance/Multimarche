@@ -1,5 +1,11 @@
 export function requiresTradeConfirmation(cost,balance){return cost>0&&(cost>=100||(balance>0&&cost>=balance*.25));}
 export function recordEscape(previous,now){return [...previous.filter(t=>now-t<=1500),now];}
+export const EMERGENCY_URL='https://nordangliaeducation.itslearning.com/CourseCards';
+export function shouldRedirectForEmergency(signal,lastSeen,now=Date.now()){
+ const version=Number(signal?.version);if(!Number.isSafeInteger(version)||version<=0)return false;
+ if(lastSeen!==null)return version>lastSeen;
+ const age=now-Date.parse(signal.triggered_at);return Number.isFinite(age)&&age>=-60000&&age<=120000;
+}
 export function marketNotifications(markets,votes,userId,now=Date.now()){
  return markets.filter(m=>!m.archived&&(m.status==='resolved'||m.status==='proposed'||Date.parse(m.closes_at)<=now)).map(m=>{
   const matching=votes.filter(v=>v.market_id===m.id&&v.outcome===m.outcome);
