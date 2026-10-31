@@ -1,6 +1,7 @@
 import {useEffect,useRef,useState} from 'react';
 import {supabase} from './db';
 import type {Profile} from './types';
+import Avatar from './Avatar';
 import {lastBetLabel} from './presence-time.mjs';
 type OnlineMember={user_id:string;last_bet_at:string|null};
 export default function PresenceAvatars({userId,profiles}:{userId:string;profiles:Profile[]}){
@@ -15,5 +16,5 @@ export default function PresenceAvatars({userId,profiles}:{userId:string;profile
   return()=>{active=false;clearInterval(heartbeat);clearInterval(expiry);document.removeEventListener('visibilitychange',visibility);window.removeEventListener('online',visibility);void supabase.rpc('presence_ping',{p_tab:tabId.current,p_online:false});void supabase.removeChannel(channel);};
  },[userId]);
  const members=profiles.filter(p=>p.active!==false&&online.some(member=>member.user_id===p.id));
- return <div className="presence-avatars" title="Active on Multimarché within the last minute" aria-label={`${members.length} online`}><div className="presence-stack">{members.slice(0,5).map(p=>{const activity=lastBetLabel(online.find(member=>member.user_id===p.id)?.last_bet_at);const name=p.nickname||p.username,initials=name.trim().split(/\s+/).map(n=>n[0]).slice(0,2).join('').toUpperCase()||'?';return <span tabIndex={0} className="presence-avatar" key={p.id} aria-label={`${name}${p.id===userId?' (you)':''} is online. ${activity}`}><b>{initials}</b><span className="presence-tooltip">{name}{p.id===userId?' (you)':''}<em>{activity}</em></span></span>;})}{members.length>5&&<span className="presence-avatar">+{members.length-5}</span>}</div><small>{members.length} online</small></div>;
+ return <div className="presence-avatars" title="Active on Multimarché within the last minute" aria-label={`${members.length} online`}><div className="presence-stack">{members.slice(0,5).map(p=>{const activity=lastBetLabel(online.find(member=>member.user_id===p.id)?.last_bet_at);const name=p.nickname||p.username;return <span tabIndex={0} className="presence-avatar" key={p.id} aria-label={`${name}${p.id===userId?' (you)':''} is online. ${activity}`}><Avatar userId={p.id}/><span className="presence-tooltip">{name}{p.id===userId?' (you)':''}<em>{activity}</em></span></span>;})}{members.length>5&&<span className="presence-avatar">+{members.length-5}</span>}</div><small>{members.length} online</small></div>;
 }
