@@ -133,3 +133,9 @@ Weekly availability checks and Dependabot PRs are configured in GitHub. See [MAI
 Before a buy, the app obtains the caller’s server-calculated 24-hour realised P/L. Average acquisition cost is allocated proportionally to sold shares, and remaining basis is realised at settlement. Open purchases and unrealised price changes are not treated as losses. Effective bankroll is current cash plus open acquisition basis minus the period’s realised net result, including external funding. A cent-rounded net loss of at least 50% triggers the virtual-only satire prompt with “Yes” and “Hell yeah!”; either continues the ordinary trade review. A per-user session acknowledgement suppresses repeats until the realised result changes. This does not alter pricing, funds or normal large-bet confirmation.
 
 `tests/economy-v6.sql` verifies nickname/admin authorization, timeouts and automatic expiry, legacy API guards, deleted/restored history, settlement during a timeout, realised-loss accounting, open-buy exclusion, presence ownership/multiple tabs/expiry and guest denial, entirely inside a rolled-back transaction.
+
+Online avatar hover/focus cards include the most recent buy time (“Last bet … ago”) in italics, independently of the foreground-tab online signal. The activity RPC is member-only, aggregates complete history rather than a truncated trade feed, and excludes inactive accounts. Tab metadata uses a black-and-white favicon and no description. User help is limited to core market, payout, sensitivity, history, counter and notification behaviour.
+
+Starred markets are pinned first in Markets, with the selected sort applied within starred and unstarred groups. There is no separate Watchlist navigation tab; saved stars remain intact.
+
+Share prices use the same ◈ credit unit as balances (e.g. ◈0.73 per share), with no cent notation or balance conversion. Pricing and settlement amounts are unchanged.
