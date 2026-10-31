@@ -7,24 +7,28 @@ Private prediction markets for friends. React/Vite on Vercel, Supabase Auth/Post
 Open https://multimarche.vercel.app. Join with an invitation, then log in with your username and password. New accounts receive 1,000 credits from treasury.
 
 - **Moon / sun button:** switch dark mode; your choice is saved on this device.
+- **Escape ×3:** blank the screen immediately; reload to return.
+- **Notifications bell:** ended markets, pending confirmations and recent outcomes; unread updates open on reload/home.
+- **Footer question mark:** detailed market, trading, settlement and blockchain help.
 - **Account icon:** edit nickname, username or password. Changing username/password requires your current password. Nicknames are displayed to the group; usernames are used for login.
-- **Create market:** enter a binary question and resolution rules. Close in 15/40/60/120 minutes, 24 hours, a custom number of minutes, or at a specific date/time. There is no emoji selection.
-- **Markets:** buy Yes/No shares, or sell shares you own before trading closes. A winning share pays one credit. Two distinct members must confirm normal results. A jointly confirmed Void pays 0.5 credits per share.
-- **Transactions:** inspect transfers, verify the hash chain and supply, export records, view admin actions, and check public-chain publication status.
+- **Create market:** enter a binary question and explicit Yes/No meanings and a confirmation count (minimum/default 2). There are no app-level character limits on event questions, meanings or resolution notes. Close in 15/40/60/120 minutes, 24 hours, a custom number of minutes, or at a specific date/time. There is no emoji selection.
+- **Markets:** buy Yes/No shares, or sell shares you own before trading closes. A winning share pays one credit. The selected number of distinct members must agree on normal results. A confirmed Void pays 0.5 credits per share.
+- **Admin → Transactions:** inspect transfers, verify the hash chain and supply, export records, view admin actions, and check public-chain publication status.
 
 The existing `arylance` account has admin permissions, managed in a private database table. There is no shared admin password or user-editable role claim.
 
 ## Admin
 
-The **Admin** page can:
+The **Admin** page opens with all users and current credit balances. Its submenus can:
 
+- Grant/revoke admin access, with a guard that preserves at least one active admin.
 - Transfer existing treasury credits to a member, with a recorded reason.
 - Explicitly issue new credits into treasury. This increases total supply, requires a separate acknowledgement, and creates an issuance record.
 - Pause/resume trading, edit market questions/rules/deadlines, and resolve or void a market immediately with a recorded admin override.
 - Archive resolved markets without deleting their transaction history.
 - Generate private invitation codes with 1–100 uses, expiring after 30 days.
 
-Normal results still require two accounts. Admin overrides are labeled in the market and appear in the member-visible admin history. Settled markets cannot be paid a second time or edited. To undo an error after settlement, use a reasoned treasury allocation; historical payouts are not rewritten.
+Normal results require the market’s selected confirmation count (at least two accounts). Admin overrides are labeled in the market and appear in the member-visible admin history. Settled markets cannot be paid a second time or edited. To undo an error after settlement, use a reasoned treasury allocation; historical payouts are not rewritten.
 
 ## Five-person markets
 
@@ -61,7 +65,7 @@ The upgrade's genesis records opening account balances and a checksum of earlier
 **Blockchain publication is not active until an admin deploys/connects the contract and publishes records.** No deployed address or confirmation is fabricated. Trading and balances remain authoritative in Supabase; the Solidity contract records public audit transactions, not an on-chain currency or betting engine.
 
 1. Use a separate browser test wallet, such as MetaMask, with Sepolia test ETH. Faucet references: https://ethereum.org/developers/docs/networks/#sepolia.
-2. Sign in as an admin and open **Transactions**.
+2. Sign in as an admin and open **Admin → Transactions**.
 3. Choose **Connect wallet & deploy on Sepolia** and approve the wallet transaction. The app switches to chain ID `11155111` and refuses other public networks.
 4. Choose **Publish next 10 records**. Each batch is independently verified, signed in the deployment wallet, and marked published only after confirmation.
 5. Repeat as new records accumulate. Other members can inspect the contract on Sepolia Etherscan and compare its confirmed hash/height with the local ledger.
@@ -90,7 +94,7 @@ The connected Supabase project is `vakkbgsooubqpmdekixr`. Its public URL and pub
 - `contracts/MultimarcheAudit.sol` is the public testnet audit contract; `npm run compile:contract` regenerates its checked-in ABI/bytecode.
 - `vercel.json` builds the Vite app into `dist` and configures SPA routing and headers.
 
-For a fresh Supabase project, apply the original bootstrap and both upgrade migrations in order, deploy the two functions, issue an invitation, and grant the intended owner an admin role via the SQL editor:
+For a fresh Supabase project, apply the original bootstrap and all upgrade migrations in filename order, deploy the two functions, issue an invitation, and grant the intended owner an admin role via the SQL editor:
 
 ```sql
 insert into private.admins(user_id)
@@ -107,8 +111,16 @@ Source is saved in https://github.com/arthurrylance/Multimarche. Vercel currentl
 - Audit tests cover exact balances, explicit issuance, tampering and unfunded transfers.
 - Contract tests execute compiled Solidity in a local EVM, checking owner authorization, sequential append, payload hashes, replay rejection and historical events.
 - Account endpoint tests check JWT validation, user ownership, current-password requirements, validation and local-only reauthentication-session revocation.
-- `tests/economy.sql` and `tests/economy-v2.sql` are owner-run rollback-only SQL tests. The latter checks funded reserves, conservation constraints, role spoofing, profile sync, audited admin operations, and one-time settlement.
+- `tests/economy.sql`, `tests/economy-v2.sql`, and `tests/economy-v3.sql` are owner-run rollback-only SQL tests. The v2 suite checks funded reserves, conservation constraints, role spoofing, profile sync, audited admin operations, and one-time settlement.
 
 Tests do not imply that a public Sepolia contract has been deployed or funded. Browser preview infrastructure has been unavailable in this workspace; production HTTP/assets and service-level checks are separate from visual browser verification.
 
-This remains a small-group virtual game, not full Polymarket parity: no central limit order book, limit orders, crypto deposits/withdrawals, real-money value, automated oracle or multi-outcome markets. The UI displays the latest 500 trades, 100 comments and 100 personal ledger entries. Complete post-upgrade financial records can be exported from Transactions.
+This remains a small-group virtual game, not full Polymarket parity: no central limit order book, limit orders, crypto deposits/withdrawals, real-money value, automated oracle or multi-outcome markets. The UI displays the latest 500 trades, 100 comments and 100 personal ledger entries. Complete post-upgrade financial records can be exported from Admin → Transactions.
+
+## Current interface and maintenance
+
+Themes use black/white/neutral grays, with full-page backgrounds and a footer at the viewport bottom on short pages. Categories are hidden for now; stored category values remain for future restoration. Large buys (100+ credits or 25% of cash) require a review showing cost, slippage, shares and potential payout. A confirmed trade uses the reviewed parameters and an idempotent request ID.
+
+Normal result notes are optional. Voting once per account and the selected confirmation count are enforced in PostgreSQL. Withdrawing a vote keeps trading paused while other confirmations remain. Admin overrides, role changes and credit actions stay recorded. Notification read markers are private to each account.
+
+Weekly availability checks and Dependabot PRs are configured in GitHub. See [MAINTENANCE.md](MAINTENANCE.md) for hosting limitations, private backups, update reviews, recovery and the remaining GitHub-to-Vercel connection step. No paid upgrade or automatic full database backup was configured.
