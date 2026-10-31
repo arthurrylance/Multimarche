@@ -8,10 +8,12 @@ Open https://multimarche.vercel.app. Join with an invitation, then log in with y
 
 - **Moon / sun button:** switch dark mode; your choice is saved on this device.
 - **Escape ×3:** redirect to the school’s itslearning CourseCards page; signed-in members also broadcast to other open app tabs.
-- **Notifications bell:** ended markets, pending confirmations and recent outcomes; unread updates appear in a top banner on reload/home. Click the banner or its cross to acknowledge them; the bell keeps the unread count until then.
+- **Notifications bell:** ended markets, pending confirmations and recent outcomes; unread updates appear in a top banner on reload/home. Click the banner or its cross to acknowledge them; opening the bell marks visible items read. Clear notifications removes them from the menu persistently. Read and cleared state sync across devices.
 - **Footer question mark:** detailed market, trading, settlement, counters and emergency help.
 - **Account icon:** edit nickname, username or password. Changing username/password requires your current password. Nicknames are displayed to the group; usernames are used for login.
 - **Create market:** enter a binary question and explicit Yes/No meanings and a confirmation count (minimum/default 2). There are no app-level character limits on event questions, meanings or resolution notes. Close in 15/40/60/120 minutes, 24 hours, a custom number of minutes, or at a specific date/time. There is no emoji selection.
+- **Home → Your bets:** a countdown, estimated P/L at current prices, and net Yes/No settlement results for up to six active markets; View portfolio shows all positions.
+- **History:** all settled markets, including archived ones, with confirmers, admin overrides, final holdings, spend, sales, payouts and net profit/loss.
 - **Markets:** buy Yes/No shares, or sell shares you own before trading closes. A winning share pays one credit. The selected number of distinct members must agree on normal results. A confirmed Void pays 0.5 credits per share.
 - **Admin → Transactions:** inspect transfers, verify the hash chain and supply, export records, and view recorded actions.
 
@@ -21,6 +23,7 @@ The existing `arylance` account has admin permissions, managed in a private data
 
 The **Admin** page opens with all users and current credit balances. Its submenus can:
 
+- Delete a member’s login and group access after confirmation. The caller cannot delete themselves. Financial records, profile identity and votes are retained; usernames stay reserved. Removed accounts are hidden from the leaderboard. Auth soft-deletion is irreversible; a failed Auth cleanup can be retried under Show removed users. Existing JWTs are denied immediately by the active-membership check.
 - Grant/revoke admin access, with a guard that preserves at least one active admin.
 - Transfer existing treasury credits to a member, with a recorded reason.
 - Explicitly issue new credits into treasury. This increases total supply, requires a separate acknowledgement, and creates an issuance record.
@@ -84,10 +87,11 @@ The connected Supabase project is `vakkbgsooubqpmdekixr`. Its public URL and pub
 - `supabase/schema.sql` is the original bootstrap, already applied.
 - `supabase/migrations/` contains the treasury/profile/admin/audit upgrades, already applied to the connected project.
 - `supabase/functions/register/` implements invited registration.
+- `supabase/functions/delete-member/` verifies the caller’s JWT, invokes the admin-only deletion transaction using that JWT, then soft-deletes the Auth identity with the server-only service key. Membership is revoked first; partial cleanup cannot leave game access active.
 - `supabase/functions/account/` verifies the caller's JWT, reauthenticates sensitive changes and updates only that user's Auth identity. A database trigger keeps the profile and login username synchronized in the same Auth transaction.
 - `vercel.json` builds the Vite app into `dist` and configures SPA routing and headers.
 
-For a fresh Supabase project, apply the original bootstrap and all upgrade migrations in filename order, deploy the two functions, issue an invitation, and grant the intended owner an admin role via the SQL editor:
+For a fresh Supabase project, apply the original bootstrap and all upgrade migrations in filename order, deploy the three functions, issue an invitation, and grant the intended owner an admin role via the SQL editor:
 
 ```sql
 insert into private.admins(user_id)
@@ -104,9 +108,9 @@ Source is saved in https://github.com/arthurrylance/Multimarche. Vercel currentl
 - Audit tests cover exact balances, explicit issuance, tampering and unfunded transfers.
 - Emergency tests exercise the actual redirect hook: authenticated keepalive broadcast, local guest navigation, and remote signal acknowledgement.
 - Account endpoint tests check JWT validation, user ownership, current-password requirements, validation and local-only reauthentication-session revocation.
-- `tests/economy.sql`, `tests/economy-v2.sql`, `tests/economy-v3.sql`, and `tests/economy-v4.sql` are owner-run rollback-only SQL tests. The v2 suite checks funded reserves, conservation constraints, role spoofing, profile sync, audited admin operations, and one-time settlement.
+- `tests/economy.sql`, `tests/economy-v2.sql`, `tests/economy-v3.sql`, `tests/economy-v4.sql`, and `tests/economy-v5.sql` are owner-run rollback-only SQL tests. The v2 suite checks funded reserves, conservation constraints, role spoofing, profile sync, audited admin operations, and one-time settlement.
 
-The v4 SQL suite checks counter access, idempotency, conservation and the shared emergency signal inside a rolled-back transaction, without redirecting live users. Private account UI flows are covered by service-level checks; public production UI is checked separately in a browser.
+The v4 SQL suite checks counter access, idempotency, conservation and the shared emergency signal inside a rolled-back transaction, without redirecting live users. The v5 suite checks stale-token denial, removal guards, preserved credit history, complete historical P/L and outcomes, and private persistent notification clearing. Component tests exercise read, clear, reload and failed acknowledgement behaviour. Private account UI flows are covered by service-level checks; public production UI is checked separately in a browser.
 
 This remains a small-group virtual game, not full Polymarket parity: no central limit order book, limit orders, crypto deposits/withdrawals, real-money value, automated oracle or multi-outcome markets. The UI displays the latest 500 trades, 100 comments and 100 personal ledger entries. Complete post-upgrade financial records can be exported from Admin → Transactions.
 

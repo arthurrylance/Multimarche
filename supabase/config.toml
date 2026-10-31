@@ -4,3 +4,6 @@ verify_jwt = false
 [functions.account]
 # The function validates the user's bearer JWT with Supabase Auth itself.
 verify_jwt = false
+[functions.delete-member]
+# Auth verifies the bearer token, then Postgres verifies the caller's admin role.
+verify_jwt = false
