@@ -23,3 +23,15 @@ test('stable cost avoids overflow for large outstanding quantities',()=>{
  assert.ok(Number.isFinite(cost(1000000,0,100)));
  assert.equal(cost(1000000,0,100),1000000);
 });
+test('weighted initial likelihood sets real marginal costs and complementary reversals conserve value',()=>{
+ for(const prior of [.01,.1,.5,.9,.99]){
+  const m={q_yes:100,q_no:40,liquidity:400,initial_probability:prior};
+  for(const q of [1,20,60,150]){
+   const closing=Math.min(60,q),proceeds=quote(m,'yes','sell',closing);
+   const after={...m,q_yes:m.q_yes-closing};
+   const spent=q>closing?quote(after,'no','buy',q-closing):0;
+   assert.ok(Math.abs(quote(m,'no','buy',q)-(closing-proceeds+spent))<1e-8);
+  }
+  assert.ok(Math.abs(quote({...m,q_yes:0,q_no:0},'yes','buy',.0001)/.0001-prior)<1e-6);
+ }
+});
