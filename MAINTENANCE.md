@@ -67,6 +67,8 @@ For dependable long-term use, an owner should budget for reliable database hosti
 
 ## Order-book compatibility
 
-Migration `20261031173324_matched_orderbook.sql` adds orders, fills, reservations and matching RPCs. Existing markets stay AMM; all new public creation APIs create CLOB markets. Deploy a compatible frontend after this migration: old clients cannot use the AMM trade RPC on new order-book markets. Do not roll production back to a frontend predating this migration without considering that restriction.
+Migration `20261031173324_matched_orderbook.sql` adds orders, fills, reservations and matching RPCs. At that upgrade, existing markets stayed AMM and the public creation APIs created CLOB markets. The later v6 API below explicitly supports both systems. Deploy a compatible frontend after this migration: old clients cannot use the AMM trade RPC on new order-book markets. Do not roll production back to a frontend predating this migration without considering that restriction.
 
 Use `tests/orderbook.sql` for rollback-only database regression checks. Include orders, order events, fills, reserved wallet/share columns and the private financial ledger in private backups. Expiry is checked at execution time and cleaned up on authenticated reads/sync/placement; no cron or always-running server is required. A reservation may remain stored while nobody uses the app, but is released on the next sync and cannot execute past its deadline.
+
+Migration `20261031192923_market_modes_disputes_avatars.sql` restores optional Automatic market creation through v6, adds dispute-aware resolution and saved avatar colours. Earlier public creation endpoints retain their order-book behaviour. A contested market has status `proposed`, `resolution_disputed=true` and no single `outcome`; keep a frontend that supports that state. Backups must include profile avatar colours and current resolution votes. Models cannot be converted after creation.

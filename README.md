@@ -12,7 +12,7 @@ Open https://multimarche.vercel.app. The signed-out page only shows login and in
 - **Footer question mark:** market, order book, trading, settlement and counter help.
 - **Account icon:** edit nickname, username or password. Changing username/password requires your current password. Nicknames are displayed to the group; usernames are used for login.
 - **Create market:** enter a binary question and explicit Yes/No meanings and a confirmation count (minimum/default 2). There are no app-level character limits on event questions, meanings or resolution notes. Choose a quick interval, tomorrow, a school-period end, a custom interval or a specific date/time. There is no emoji selection.
-- **Profile pictures:** one of the eight supplied PNGs is assigned from each random account UUID, consistently across devices/reloads and nickname changes. Presence, account, leaderboard, comments and admin users all use the same picture. Files are served as static assets, with no external image service or profile-data migration.
+- **Profile pictures:** one of the eight supplied PNGs is initially assigned from each random account UUID. The reload button on Account saves a different random colour to `profiles.avatar_color`, consistently across devices/reloads and nickname changes. Presence, account, leaderboard, comments and admin users all use the same picture. Files are served as static assets, with no external image service.
 - **Online avatars:** authenticated members see other recently active members. Server-owned, per-tab presence leases update with Supabase Realtime, heartbeat every 20 seconds and expire after 60 seconds. Hidden tabs go offline; closing one tab does not remove another device. Guests cannot read or publish presence.
 - **Home → Your bets:** a countdown, estimated P/L at current prices, and net Yes/No settlement results for up to six active markets; View portfolio shows all positions.
 - **History:** all settled markets, including archived ones, with confirmers, admin overrides, final holdings, spend, sales, payouts and net profit/loss.
@@ -36,11 +36,11 @@ The **Admin** page opens with all users and current credit balances. Its submenu
 - Archive resolved markets without deleting their transaction history.
 - Generate private invitation codes with 1–100 uses, expiring after 30 days.
 
-Normal results require the market’s selected confirmation count (at least two accounts). Admin overrides are labeled in the market and appear in the member-visible admin history. Settled markets cannot be paid a second time or edited. To undo an error after settlement, use a reasoned treasury allocation; historical payouts are not rewritten.
+Normal results require the market’s selected confirmation count (at least two accounts), with no current opposing votes. Members may vote Yes/No/Void independently, change their own vote, or withdraw before settlement. Conflicting votes mark the result disputed and block trading and payouts even if one side meets the count. Changing/withdrawing the last opposition can settle an otherwise sufficient consensus. Withdrawing all votes removes the proposal; the deadline and manual admin pause still apply. Cancelled book orders are not resurrected. Admins may override a dispute, with the override recorded. Admin overrides are labeled in the market and appear in the member-visible admin history. Settled markets cannot be paid a second time or edited. To undo an error after settlement, use a reasoned treasury allocation; historical payouts are not rewritten.
 
 ## Matched order book
 
-New markets use a virtual-credit central limit order book behind a simple credit-budget betting panel. Existing markets retain their original AMM positions, prices and settlement; their trading panel is marked **Legacy AMM**. All public creation API versions create order-book markets. There is no price-sensitivity setting on new markets.
+At creation, choose **Automatic** (AMM, the default for quick/small-group bets) or **Order book** (matched member orders for longer bets). The model stays fixed for that market. Existing markets and positions are not converted. Order-book markets use a simple credit-budget betting panel. Existing AMM markets retain their positions, prices and settlement; their trading panel is marked **Automatic**. The creation UI uses `create_market_v6` with an explicit execution model. Earlier public creation API versions still create order-book markets for compatibility. There is no price-sensitivity setting on new markets.
 
 The default **Bet** view takes only credits and an outcome. It selects the best executable offer for that outcome, otherwise its current marked price (50/50 if none exists). Credit amounts are converted into four-decimal share quantities using integer budget arithmetic and rounded down, so the reservation cannot exceed the entered stake. It uses a GTC order: available matches execute at that price or better and the remainder waits at the previewed price. It does not chase more expensive offers or silently change the reviewed price. Cancel the unmatched part in the market or Portfolio. Payout previews assume full matching; the panel explicitly identifies unmatched amounts. Cash out selects 25/50/100% of unreserved holdings and uses the best current bid, otherwise the marked price, with any remainder pending.
 
@@ -65,7 +65,7 @@ The upgrade establishes an explicit **100,000-credit opening supply**. It preser
 
 - Starting balances and admin top-ups transfer from treasury.
 - Order-book markets receive **no treasury seed**. Matched complete pairs fund one credit of collateral, which is fully paid to holders on settlement. Direct resales leave collateral unchanged; merged pairs release it to the two sellers. The treasury takes no trading surplus.
-- Legacy AMM markets retain their funded `b × ln(2)` seed, automatic cost pricing and unused-reserve return to treasury.
+- Automatic AMM markets retain their funded `b × ln(2)` seed, automatic cost pricing and unused-reserve return to treasury.
 - Outstanding payouts are fully funded; unfilled orders create no shares.
 - Deferred database constraints verify that all user balances and reserves sum to the issued supply, and that mirrored wallets agree with the accounting ledger.
 - Only explicit genesis and admin issuance increase supply. Buying, selling, allocating and settling do not create credits.
@@ -131,7 +131,7 @@ Guest access is limited to a dedicated login/invite page. User help covers norma
 
 Themes use black/white/neutral grays with green Yes and red No hover/focus states, with full-page backgrounds and a footer at the viewport bottom on short pages. Categories are hidden for now; stored category values remain for future restoration. Large buys (100+ credits or 25% of cash) require a review showing cost, slippage, shares and potential payout. A confirmed trade uses the reviewed parameters and an idempotent request ID.
 
-Normal result notes are optional. Voting once per account and the selected confirmation count are enforced in PostgreSQL. Withdrawing a vote keeps trading paused while other confirmations remain. Admin overrides, role changes and credit actions stay recorded. Notification read markers are private to each account.
+Normal result notes are optional. One current vote per account and the selected confirmation count are enforced in PostgreSQL. Votes can be changed before settlement. Withdrawing a vote keeps trading paused while other confirmations remain. Admin overrides, role changes and credit actions stay recorded. Notification read markers are private to each account.
 
 Weekly availability checks and Dependabot PRs are configured in GitHub. See [MAINTENANCE.md](MAINTENANCE.md) for hosting limitations, private backups, update reviews, recovery and the remaining GitHub-to-Vercel connection step. No paid upgrade or automatic full database backup was configured.
 
@@ -152,3 +152,9 @@ Market creation has quick 15/30/40-minute, one-hour and calendar-tomorrow choice
 ## Order-book verification
 
 `tests/orderbook.sql` is a transaction-only fixture that ends with ROLLBACK. It checks funded mint/merge/direct matching, price/time priority, improvement, partial fills, atomic FOK failure, FAK remainder cancellation, reservation and idempotency guards, self-trade prevention, expiry, access controls, timeout/pause/proposal cleanup, settlement and audit conservation. Legacy SQL suites explicitly create legacy AMM fixtures through private helpers; public creation compatibility is tested in the order-book suite. Node tests check quote/depth arithmetic, exact budget conversion, default simple betting, fractional cash-out reservations, advanced controls and captured large-bet confirmations. Authenticated browser trading still requires a member login; database fixtures do not create persistent test accounts or alter real bets.
+
+## Market modes, disputes and saved pictures
+
+Migration `20261031192923_market_modes_disputes_avatars.sql` adds explicit creation choices, immutable execution models, conflict-aware resolution and a member-only own-account avatar reroll RPC. Automatic markets use the original funded LMSR with b=400 and no price-sensitivity setting; they reserve treasury collateral, trade immediately and return unused reserves to treasury. Order-book markets retain the matched-player, no-treasury-seed economy.
+
+`tests/market-modes.sql` uses only rollback fixtures. It checks both creation modes, automatic odds movement, funded book settlement, disagreement blocking, changed/withdrawn votes, consensus reconciliation, admin overrides, mode immutability, account-scoped persistent rerolls, guest denial and supply/audit conservation. Component tests cover the model picker, independent No votes, changing/withdrawing votes, notification opposition controls and saved picture refresh.

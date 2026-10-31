@@ -6,7 +6,7 @@ const settle=()=>new Promise(resolve=>setImmediate(resolve));
 function panel(rows=new Map(),fail=false){
  const state=[],effects=[],pending=[];let cursor=0,tree;const calls=[];
  const hooks={useState:init=>{const i=cursor++;if(!(i in state))state[i]=typeof init==='function'?init():init;return[state[i],value=>{state[i]=typeof value==='function'?value(state[i]):value;}];},useRef:init=>{const i=cursor++;return state[i]??=( {current:init});},useEffect:(fn,deps)=>{const i=cursor++;if(!effects[i]||deps.some((v,j)=>v!==effects[i].deps[j])){effects[i]?.cleanup?.();effects[i]={deps};pending.push(()=>{effects[i].cleanup=fn();});}}};
- const supabase={from:()=>({select:()=>({eq:()=>Promise.resolve({data:[...rows].map(([event_key,dismissed])=>({event_key,dismissed})),error:null})})}),rpc:async(name,args)=>{calls.push({name,args});if(fail)return{error:new Error('Offline')};for(const key of args.p_keys)rows.set(key,(rows.get(key)??false)||args.p_clear);return{error:null};}};
+ const supabase={from:()=>({select:()=>({eq:()=>Promise.resolve({data:[...rows].map(([event_key,dismissed])=>({event_key,dismissed})),error:null})})}),rpc:async(name,args)=>{calls.push({name,args});if(name==='resolve_market')return{data:'disputed'};if(fail)return{error:new Error('Offline')};for(const key of args.p_keys)rows.set(key,(rows.get(key)??false)||args.p_clear);return{error:null};}};
  const jsx=(type,props,key)=>({type,props:props??{},key});const module={exports:{}};
  vm.runInNewContext(compiled,{exports:module.exports,require:name=>name==='react'?hooks:name==='react-dom'?{createPortal:x=>x}:name==='react/jsx-runtime'?{jsx,jsxs:jsx,Fragment:'fragment'}:name==='./db'?{supabase}:name==='./interactions.mjs'?{marketNotifications}:new Proxy({},{get:()=>()=>null}),document:{getElementById:()=>({})},window:{confirm:()=>true},Date,Set,console});
  const props={markets:[{id:'m',title:'Finished?',status:'resolved',outcome:'yes',resolved_at:'2026-10-31T10:00:00Z',closes_at:'2026-10-31T09:00:00Z'}],votes:[],userId:'member',admin:false,tick:0,refresh:()=>{},notify:()=>{},openMarket:()=>{}};
@@ -24,4 +24,9 @@ test('cleared notifications disappear, remain cleared on reload, and cannot be r
 });
 test('failed acknowledgements restore unread badges instead of silently losing updates',async()=>{
  const app=panel(new Map(),true);app.render();await settle();app.render();app.button('Notifications, 1 unread').props.onClick();await settle();app.render();assert.ok(app.badge());assert.equal(app.rows.size,0);
+});
+
+test('proposed-result notifications let members vote No and later change their observation',async()=>{
+ const app=panel();app.props.markets=[{id:'m',title:'Happened?',status:'proposed',outcome:'yes',required_verifications:2,state_changed_at:'2026-10-31T10:00:00Z'}];app.props.votes=[{market_id:'m',user_id:'other',outcome:'yes'}];app.render();await settle();app.render();app.button('Notifications, 1 unread').props.onClick();await settle();app.render();const no=app.button('No, it didn’t');assert.ok(no);assert.ok(!no.props.disabled);await no.props.onClick();await settle();assert.equal(app.calls.find(c=>c.name==='resolve_market').args.p_outcome,'no');
+ app.props.markets[0]={...app.props.markets[0],outcome:null,resolution_disputed:true};app.props.votes.push({market_id:'m',user_id:'member',outcome:'no'});app.render();assert.match(app.text(),/Disputed/);assert.equal(app.button('No, it didn’t').props.disabled,true);assert.equal(app.button('Yes, it happened').props.disabled,false);
 });
