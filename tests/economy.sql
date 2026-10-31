@@ -1,3 +1,4 @@
+-- AMM fixtures intentionally use private legacy creation helpers; public APIs now create order books.
 -- Run as project owner. All fixture accounts and trades roll back.
 begin;
 insert into private.invites(code_hash,remaining,expires_at)
@@ -10,7 +11,7 @@ do $$ begin
 end $$;
 set local role authenticated;
 select set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000001',true);
-select set_config('test.market', public.create_market('Will this integration test pass?', 'Yes if all assertions pass. No otherwise.','Other','🧪',now()+interval '1 hour')::text,true);
+select set_config('test.market', private.create_market('Will this integration test pass?', 'Yes if all assertions pass. No otherwise.','Other','🧪',now()+interval '1 hour')::text,true);
 do $$ declare mid uuid := current_setting('test.market')::uuid; t jsonb; initial numeric; begin
  select balance into initial from public.wallets;
  if initial<>1000 then raise exception 'Wrong starting balance'; end if;

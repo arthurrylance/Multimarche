@@ -1,3 +1,4 @@
+-- AMM fixtures intentionally use private legacy creation helpers; public APIs now create order books.
 -- Transactional fixtures only: no real accounts are removed and no credits persist.
 begin;
 insert into private.invites values(encode(extensions.digest('v5-test-only','sha256'),'hex'),3,now()+interval '1 hour');
@@ -8,8 +9,8 @@ insert into auth.users(id,email,raw_user_meta_data) values
 insert into private.admins values('00000000-0000-4000-8000-000000000501');
 set local role authenticated;
 select set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000501',true);
-select set_config('test.v5market',public.create_market_v4('Historical bet','It happened','It did not',now()+interval '40 minutes',400,2,false,'Count')::text,true);
-select set_config('test.v5override',public.create_market_v4('Admin result','Yes','No',now()+interval '40 minutes',400,2,false,'Count')::text,true);
+select set_config('test.v5market',private.create_market_v4('Historical bet','It happened','It did not',now()+interval '40 minutes',400,2,false,'Count')::text,true);
+select set_config('test.v5override',private.create_market_v4('Admin result','Yes','No',now()+interval '40 minutes',400,2,false,'Count')::text,true);
 do $$begin
  begin perform public.market_history(current_setting('test.v5market')::uuid);raise exception 'TEST FAILED open market history';exception when others then if sqlerrm like 'TEST FAILED%' then raise;end if;end;
  begin perform public.admin_delete_member(auth.uid());raise exception 'TEST FAILED self-deletion';exception when others then if sqlerrm like 'TEST FAILED%' then raise;end if;end;

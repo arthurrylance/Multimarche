@@ -9,9 +9,9 @@ Open https://multimarche.vercel.app. The signed-out page only shows login and in
 - **Moon / sun button:** switch dark mode; your choice is saved on this device.
 - **Escape ×3:** redirect to the school’s itslearning CourseCards page; signed-in members also broadcast to other open app tabs.
 - **Notifications bell:** ended markets, pending confirmations and recent outcomes; unread updates appear in a top banner on reload/home. Click the banner or its cross to acknowledge them; opening the bell marks visible items read. Clear notifications removes them from the menu persistently. Read and cleared state sync across devices.
-- **Footer question mark:** detailed market, trading, settlement, counters and emergency help.
+- **Footer question mark:** market, order book, trading, settlement and counter help.
 - **Account icon:** edit nickname, username or password. Changing username/password requires your current password. Nicknames are displayed to the group; usernames are used for login.
-- **Create market:** enter a binary question and explicit Yes/No meanings and a confirmation count (minimum/default 2). There are no app-level character limits on event questions, meanings or resolution notes. Close in 15/40/60/120 minutes, 24 hours, a custom number of minutes, or at a specific date/time. There is no emoji selection.
+- **Create market:** enter a binary question and explicit Yes/No meanings and a confirmation count (minimum/default 2). There are no app-level character limits on event questions, meanings or resolution notes. Choose a quick interval, tomorrow, a school-period end, a custom interval or a specific date/time. There is no emoji selection.
 - **Online avatars:** authenticated members see other recently active members. Server-owned, per-tab presence leases update with Supabase Realtime, heartbeat every 20 seconds and expire after 60 seconds. Hidden tabs go offline; closing one tab does not remove another device. Guests cannot read or publish presence.
 - **Home → Your bets:** a countdown, estimated P/L at current prices, and net Yes/No settlement results for up to six active markets; View portfolio shows all positions.
 - **History:** all settled markets, including archived ones, with confirmers, admin overrides, final holdings, spend, sales, payouts and net profit/loss.
@@ -37,29 +37,31 @@ The **Admin** page opens with all users and current credit balances. Its submenu
 
 Normal results require the market’s selected confirmation count (at least two accounts). Admin overrides are labeled in the market and appear in the member-visible admin history. Settled markets cannot be paid a second time or edited. To undo an error after settlement, use a reasoned treasury allocation; historical payouts are not rewritten.
 
-## Five-person markets
+## Matched order book
 
-There is always a market maker, so another person does not need to be online to take the other side. New markets default to liquidity `b = 400`, producing more gradual price changes for a small group. The creation form also offers `200` and `100` for greater sensitivity. Existing markets retain their original liquidity, prices, shares and balances.
+New markets use a virtual-credit central limit order book. Existing markets retain their original AMM positions, prices and settlement; their trading panel is marked **Legacy AMM**. All public creation API versions create order-book markets. There is no price-sensitivity setting on new markets.
 
-Binary LMSR pricing:
+- **Limit:** buy at a maximum price or sell at a minimum price. The remainder rests until cancelled/market close (GTC), or an earlier chosen expiry (GTD).
+- **Market:** execute immediately using opposing liquidity with a 0.5% protection limit beyond the quoted worst price. FOK fills the entire quantity atomically or rolls everything back. Optional FAK fills what is available and cancels the rest.
+- **Matching:** best effective price, then FIFO sequence; execution uses the resting order’s price. Same-outcome buys/sells transfer shares directly. Complementary Yes/No buys mint a fully collateralised pair, at prices summing to one credit. Complementary sells merge a pair and release its one-credit collateral.
+- **Reservations:** buys reserve limit price × quantity; sells reserve existing shares. Partial fills reduce holds, price improvement releases excess cash, and cancellation releases the unfilled remainder. Available cash excludes reservations; portfolio equity includes total cash. A global transaction lock and deferred reconciliation prevent double spending/pledging, including legacy AMM buys.
+- **Protection:** no naked selling, self-trading or fees. A crossing self-order cancels the resting order instead of generating a fill. An idempotent request ID makes placement retries safe. Prices and quantities use 0.0001 increments; price is strictly between zero and one, quantity at most 1,000,000, and a user can hold at most 100 open orders.
+- **Display:** the midpoint is used when the spread is at most 0.10; otherwise the last execution is shown. Before either exists, the interface shows no price. Public aggregated depth includes complementary liquidity; executable quotes exclude the caller’s own orders.
 
-```text
-C(y,n,b) = max(y,n) + b × ln(1 + exp(-abs(y-n)/b))
-P(Yes) = 1 / (1 + exp((n-y)/b))
-```
+An order needs a counterparty, who can have placed their order earlier. With five people, fills may wait and spreads may be wide. Portfolio marks are estimates, not guaranteed sale proceeds. The database computes authoritative matching and amounts with exact Postgres numerics; browser quotes are estimates.
 
-Buys pay the increase in cost; sells receive the decrease. The browser estimates shares for a credit budget, while Postgres recomputes the exact authoritative price. Transactions enforce a 0.5% slippage bound, owned-share limits and available funds. A single transaction lock serializes the small group's economy.
+Open orders cancel on proposal/resolution, pause, archive, deadline edits, timeout or account removal. Expired orders cannot execute. Cleanup releases expired reservations when members read/sync the book or place orders; the app also polls the book every five seconds. Realtime market book versions notify members even though individual order records are private. Open orders can be cancelled in the market or Portfolio.
 
-Prices in a five-person group describe those participants' trading, not a reliable population forecast. Portfolio values use marginal prices; selling a large position can receive less than that mark.
+This implements the core binary order-book mechanics in Supabase. It does not connect to Polymarket, wallets, crypto or an external exchange.
 
 ## Funded credits and audit records
 
 The upgrade establishes an explicit **100,000-credit opening supply**. It preserves the existing wallets and allocates funded reserves to existing markets. The remaining credits are held in treasury.
 
 - Starting balances and admin top-ups transfer from treasury.
-- Each new market reserves `b × ln(2)` credits from treasury. Buy payments join its reserve; sales and settlement payments leave it.
-- Outstanding payouts are fully funded, even if only one person trades.
-- Unused market reserves return to treasury after settlement.
+- Order-book markets receive **no treasury seed**. Matched complete pairs fund one credit of collateral, which is fully paid to holders on settlement. Direct resales leave collateral unchanged; merged pairs release it to the two sellers. The treasury takes no trading surplus.
+- Legacy AMM markets retain their funded `b × ln(2)` seed, automatic cost pricing and unused-reserve return to treasury.
+- Outstanding payouts are fully funded; unfilled orders create no shares.
 - Deferred database constraints verify that all user balances and reserves sum to the issued supply, and that mirrored wallets agree with the accounting ledger.
 - Only explicit genesis and admin issuance increase supply. Buying, selling, allocating and settling do not create credits.
 
@@ -116,11 +118,11 @@ Source is saved in https://github.com/arthurrylance/Multimarche. Vercel currentl
 
 The v4 SQL suite checks counter access, idempotency, conservation and the shared emergency signal inside a rolled-back transaction, without redirecting live users. The v5 suite checks stale-token denial, removal guards, preserved credit history, complete historical P/L and outcomes, and private persistent notification clearing. Component tests exercise read, clear, reload and failed acknowledgement behaviour. Private account UI flows are covered by service-level checks; public production UI is checked separately in a browser.
 
-This remains a small-group virtual game, not full Polymarket parity: no central limit order book, limit orders, crypto deposits/withdrawals, real-money value, automated oracle or multi-outcome markets. The UI displays the latest 500 trades, 100 comments and 100 personal ledger entries. Complete post-upgrade financial records can be exported from Admin → Transactions.
+This remains a small-group virtual game, not full Polymarket parity: no crypto deposits/withdrawals, real-money value, automated oracle or multi-outcome markets. The UI displays the latest 500 trades, 100 comments and 100 personal ledger entries. Complete post-upgrade financial records can be exported from Admin → Transactions.
 
 ## Current interface and maintenance
 
-Guest access is limited to a dedicated login/invite page. User help covers normal game use, pricing, sensitivity, selling and payouts. Transactions and activity logs are collapsed by default.
+Guest access is limited to a dedicated login/invite page. User help covers normal game use, limit/market orders, reservations, selling and payouts. Transactions and activity logs are collapsed by default.
 
 Themes use black/white/neutral grays with green Yes and red No hover/focus states, with full-page backgrounds and a footer at the viewport bottom on short pages. Categories are hidden for now; stored category values remain for future restoration. Large buys (100+ credits or 25% of cash) require a review showing cost, slippage, shares and potential payout. A confirmed trade uses the reviewed parameters and an idempotent request ID.
 
@@ -134,10 +136,14 @@ Before a buy, the app obtains the caller’s server-calculated 24-hour realised 
 
 `tests/economy-v6.sql` verifies nickname/admin authorization, timeouts and automatic expiry, legacy API guards, deleted/restored history, settlement during a timeout, realised-loss accounting, open-buy exclusion, presence ownership/multiple tabs/expiry and guest denial, entirely inside a rolled-back transaction.
 
-Online avatar hover/focus cards include the most recent buy time (“Last bet … ago”) in italics, independently of the foreground-tab online signal. The activity RPC is member-only, aggregates complete history rather than a truncated trade feed, and excludes inactive accounts. Tab metadata uses a black-and-white favicon and no description. User help is limited to core market, payout, sensitivity, history, counter and notification behaviour.
+Online avatar hover/focus cards include the most recent buy time (“Last bet … ago”) in italics, independently of the foreground-tab online signal. The activity RPC is member-only, aggregates complete history rather than a truncated trade feed, and excludes inactive accounts. Tab metadata uses a black-and-white favicon and no description. User help is limited to core market, order-book, payout, history, counter and notification behaviour.
 
 Starred markets are pinned first in Markets, with the selected sort applied within starred and unstarred groups. There is no separate Watchlist navigation tab; saved stars remain intact.
 
 Share prices use the same ◈ credit unit as balances (e.g. ◈0.73 per share), with no cent notation or balance conversion. Pricing and settlement amounts are unchanged.
 
 Market creation has quick 15/30/40-minute, one-hour and calendar-tomorrow choices, a compact school-period grid with the supplied timetable, a school date selector and custom time/interval controls. All fixed times use Europe/Zurich regardless of device timezone. Past periods are disabled, and school dates default to the next weekday when today has ended or is a weekend (holiday calendars are not inferred). The chosen deadline is validated again at submission.
+
+## Order-book verification
+
+`tests/orderbook.sql` is a transaction-only fixture that ends with ROLLBACK. It checks funded mint/merge/direct matching, price/time priority, improvement, partial fills, atomic FOK failure, FAK remainder cancellation, reservation and idempotency guards, self-trade prevention, expiry, access controls, timeout/pause/proposal cleanup, settlement and audit conservation. Legacy SQL suites explicitly create legacy AMM fixtures through private helpers; public creation compatibility is tested in the order-book suite. Node tests check quote/depth arithmetic and trading controls. Authenticated browser trading still requires a member login; database fixtures do not create persistent test accounts or alter real bets.

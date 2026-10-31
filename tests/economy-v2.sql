@@ -1,3 +1,4 @@
+-- AMM fixtures intentionally use private legacy creation helpers; public APIs now create order books.
 -- Owner-run test. Fixture accounts, role changes, transfers and audit blocks roll back.
 begin;
 insert into private.invites values(encode(extensions.digest('v2-test-only','sha256'),'hex'),2,now()+interval '1 hour');
@@ -18,7 +19,7 @@ do $$begin
  begin update public.audit_blocks set hash=repeat('0',64);raise exception 'TEST FAILED audit edit';exception when insufficient_privilege then null;end;
 end $$;
 select set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000101',true);
-select set_config('test.v2market',public.create_market_v2('Will the v2 economy test pass?','Yes when all test assertions pass; No otherwise.','Other',now()+interval '40 minutes',400)::text,true);
+select set_config('test.v2market',private.create_market_v2('Will the v2 economy test pass?','Yes when all test assertions pass; No otherwise.','Other',now()+interval '40 minutes',400)::text,true);
 do $$declare m uuid:=current_setting('test.v2market')::uuid;before jsonb;after_state jsonb;
 begin
  if not public.is_admin() then raise exception 'Admin role not detected';end if;

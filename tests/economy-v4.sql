@@ -1,3 +1,4 @@
+-- AMM fixtures intentionally use private legacy creation helpers; public APIs now create order books.
 -- All fixtures and the shared redirect signal are rolled back: no live broadcast.
 begin;
 insert into private.invites values(encode(extensions.digest('v4-test-only','sha256'),'hex'),2,now()+interval '1 hour');
@@ -9,7 +10,7 @@ update public.emergency_signal set triggered_at=now()-interval '1 hour' where id
 select set_config('test.signal_version',(select version::text from public.emergency_signal),true);
 set local role authenticated;
 select set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000301',true);
-select set_config('test.v4market',public.create_market_v4('Count?','More than three','Three or fewer',now()+interval '40 minutes',400,2,true,'Etcetera count')::text,true);
+select set_config('test.v4market',private.create_market_v4('Count?','More than three','Three or fewer',now()+interval '40 minutes',400,2,true,'Etcetera count')::text,true);
 select set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000302',true);
 do $$declare mid uuid:=current_setting('test.v4market')::uuid;cash numeric;version bigint;
 begin

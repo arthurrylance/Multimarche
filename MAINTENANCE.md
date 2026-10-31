@@ -64,3 +64,9 @@ Until that connection is made, source changes need a deliberate Vercel deploymen
 If the frontend breaks, roll back to a known compatible Vercel deployment. A frontend rollback does not undo database migrations. If the database is lost or corrupted, restore a verified private backup and test before reconnecting production. Preserve audit history rather than editing past transfers.
 
 For dependable long-term use, an owner should budget for reliable database hosting and backups, keep update reviews active and periodically test recovery. This setup does not promise unattended maintenance forever.
+
+## Order-book compatibility
+
+Migration `20261031173324_matched_orderbook.sql` adds orders, fills, reservations and matching RPCs. Existing markets stay AMM; all new public creation APIs create CLOB markets. Deploy a compatible frontend after this migration: old clients cannot use the AMM trade RPC on new order-book markets. Do not roll production back to a frontend predating this migration without considering that restriction.
+
+Use `tests/orderbook.sql` for rollback-only database regression checks. Include orders, order events, fills, reserved wallet/share columns and the private financial ledger in private backups. Expiry is checked at execution time and cleaned up on authenticated reads/sync/placement; no cron or always-running server is required. A reservation may remain stored while nobody uses the app, but is released on the next sync and cannot execute past its deadline.

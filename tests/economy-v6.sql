@@ -1,3 +1,4 @@
+-- AMM fixtures intentionally use private legacy creation helpers; public APIs now create order books.
 begin;
 insert into private.invites values(encode(extensions.digest('v6-test-only','sha256'),'hex'),3,now()+interval '1 hour');
 insert into auth.users(id,email,raw_user_meta_data) values
@@ -7,8 +8,8 @@ insert into auth.users(id,email,raw_user_meta_data) values
 insert into private.admins values('00000000-0000-4000-8000-000000000601');
 set local role authenticated;
 select set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000601',true);
-select set_config('test.v6market',public.create_market_v4('Loss check','Yes','No',now()+interval '40 minutes',400,2,false,'Count')::text,true);
-select set_config('test.v6open',public.create_market_v4('Frozen check','Yes','No',now()+interval '40 minutes',400,2,true,'Count')::text,true);
+select set_config('test.v6market',private.create_market_v4('Loss check','Yes','No',now()+interval '40 minutes',400,2,false,'Count')::text,true);
+select set_config('test.v6open',private.create_market_v4('Frozen check','Yes','No',now()+interval '40 minutes',400,2,true,'Count')::text,true);
 select public.admin_nickname('00000000-0000-4000-8000-000000000602','New Nickname');
 do $$begin
  if (select nickname from public.profiles where username='v6_member')<>'New Nickname' then raise exception 'Nickname not updated';end if;
@@ -39,8 +40,8 @@ do $$declare mid uuid:=current_setting('test.v6open')::uuid;
 begin
  if not public.is_member() or not exists(select 1 from public.markets where id=mid) then raise exception 'Frozen member cannot browse';end if;
  begin perform public.trade(mid,'yes','buy',1,100,gen_random_uuid());raise exception 'TEST FAILED frozen trade';exception when others then if sqlerrm like 'TEST FAILED%' then raise;end if;end;
- begin perform public.create_market_v4('Bad','Yes','No',now()+interval '1 hour',400,2,false,'Count');raise exception 'TEST FAILED frozen create';exception when others then if sqlerrm like 'TEST FAILED%' then raise;end if;end;
- begin perform public.create_market_v2('Bad','Rule','Other',now()+interval '1 hour',400);raise exception 'TEST FAILED frozen legacy create';exception when others then if sqlerrm like 'TEST FAILED%' then raise;end if;end;
+ begin perform private.create_market_v4('Bad','Yes','No',now()+interval '1 hour',400,2,false,'Count');raise exception 'TEST FAILED frozen create';exception when others then if sqlerrm like 'TEST FAILED%' then raise;end if;end;
+ begin perform private.create_market_v2('Bad','Rule','Other',now()+interval '1 hour',400);raise exception 'TEST FAILED frozen legacy create';exception when others then if sqlerrm like 'TEST FAILED%' then raise;end if;end;
  begin perform public.resolve_market(mid,'yes','');raise exception 'TEST FAILED frozen result';exception when others then if sqlerrm like 'TEST FAILED%' then raise;end if;end;
  begin perform public.withdraw_resolution(mid);raise exception 'TEST FAILED frozen withdraw';exception when others then if sqlerrm like 'TEST FAILED%' then raise;end if;end;
  begin perform public.change_counter(mid,1,gen_random_uuid());raise exception 'TEST FAILED frozen count';exception when others then if sqlerrm like 'TEST FAILED%' then raise;end if;end;
