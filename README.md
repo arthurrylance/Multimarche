@@ -139,3 +139,5 @@ Online avatar hover/focus cards include the most recent buy time (“Last bet �
 Starred markets are pinned first in Markets, with the selected sort applied within starred and unstarred groups. There is no separate Watchlist navigation tab; saved stars remain intact.
 
 Share prices use the same ◈ credit unit as balances (e.g. ◈0.73 per share), with no cent notation or balance conversion. Pricing and settlement amounts are unchanged.
+
+Market creation has quick 15/30/40-minute, one-hour and calendar-tomorrow choices, a compact school-period grid with the supplied timetable, a school date selector and custom time/interval controls. All fixed times use Europe/Zurich regardless of device timezone. Past periods are disabled, and school dates default to the next weekday when today has ended or is a weekend (holiday calendars are not inferred). The chosen deadline is validated again at submission.
