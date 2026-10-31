@@ -1,3 +1,6 @@
 project_id = "vakkbgsooubqpmdekixr"
 [functions.register]
 verify_jwt = false
+[functions.account]
+# The function validates the user's bearer JWT with Supabase Auth itself.
+verify_jwt = false
