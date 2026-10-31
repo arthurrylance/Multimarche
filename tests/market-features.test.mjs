@@ -1,3 +1,4 @@
+import {randomUUID} from 'node:crypto';
 import test from 'node:test';import assert from 'node:assert/strict';import {readFileSync} from 'node:fs';import vm from 'node:vm';import ts from 'typescript';
 import {resolveEnding} from '../src/ending-times.mjs';import {avatarPath} from '../src/avatar.mjs';
 const settle=()=>new Promise(resolve=>setImmediate(resolve));
@@ -8,7 +9,7 @@ function mount(file,props,{exportName='default',rpc=async()=>({data:'proposed'})
  const supabase={rpc:async(name,args)=>{calls.push({name,args});return rpc(name,args);}};
  const jsx=(type,props,key)=>({type,props:props??{},key}),module={exports:{}};
  const dummy=new Proxy({},{get:()=>()=>null});
- vm.runInNewContext(compiled,{exports:module.exports,require:name=>name==='react'?hooks:name==='react/jsx-runtime'?{jsx,jsxs:jsx,Fragment:'fragment'}:name==='./db'?{supabase}:name==='./ending-times.mjs'?{resolveEnding}:extra[name]??dummy,Date,FormData:class{constructor(data){this.data=data;}get(key){return this.data[key];}}});
+ vm.runInNewContext(compiled,{exports:module.exports,require:name=>name==='react'?hooks:name==='react/jsx-runtime'?{jsx,jsxs:jsx,Fragment:'fragment'}:name==='./db'?{supabase}:name==='./ending-times.mjs'?{resolveEnding}:extra[name]??dummy,Date,crypto:{randomUUID},FormData:class{constructor(data){this.data=data;}get(key){return this.data[key];}}});
  const walk=n=>!n||typeof n!=='object'?[]:Array.isArray(n)?n.flatMap(walk):[n,...walk(n.props?.children)];
  const text=n=>n==null||typeof n==='boolean'?'':typeof n!=='object'?String(n):Array.isArray(n)?n.map(text).join(''):text(n.props?.children);
  return {calls,props,render(){cursor=0;tree=module.exports[exportName](props);for(const e of pending.splice(0))e();},nodes:()=>walk(tree),text:()=>text(tree),button:label=>walk(tree).find(n=>n.type==='button'&&(text(n)===label||n.props['aria-label']===label)),form:()=>walk(tree).find(n=>n.type==='form')};
@@ -32,4 +33,17 @@ test('profile reroll saves only the own-account picture, without submitting nick
 });
 test('saved avatar colours override the stable default and invalid paths cannot become image URLs',()=>{
  const id='account';assert.equal(avatarPath(id,'green'),'/avatars/green.png');assert.equal(avatarPath(id,'https://other.invalid/image'),avatarPath(id));assert.equal(avatarPath(id,null),avatarPath(id));
+});
+
+test('grouped creation keeps option drafts, sends independent meanings and reuses the same request after an uncertain failure',async()=>{
+ const done=[];let attempt=0;const app=mount('App.tsx',{done:id=>done.push(id)},{exportName:'CreateForm',rpc:async()=>++attempt===1?{error:new Error('Temporary connection failure')}:{data:{group_id:'g',market_ids:['child-a','child-b']}}});app.render();app.button('Several options').props.onClick();app.render();
+ const option=i=>app.nodes().find(n=>n.type==='textarea'&&n.props['aria-label']===`Option ${i}`);
+ option(1).props.onChange({target:{value:'Says etcetera'}});option(2).props.onChange({target:{value:'Old draft'}});app.render();app.button('Add option').props.onClick();app.render();option(3).props.onChange({target:{value:'Mentions homework'}});app.render();app.button('Remove option 2').props.onClick();app.render();assert.equal(option(2).props.value,'Mentions homework');
+ const data={title:'What happens in physics?',verifications:'2'};await app.form().props.onSubmit({preventDefault(){},currentTarget:data});app.render();assert.match(app.text(),/Temporary connection failure/);await app.form().props.onSubmit({preventDefault(){},currentTarget:data});
+ assert.equal(app.calls[0].name,'create_market_group');assert.equal(JSON.stringify(app.calls[0].args),JSON.stringify(app.calls[1].args));assert.deepEqual(Array.from(app.calls[0].args.p_options,o=>o.label),['Says etcetera','Mentions homework']);assert.equal(app.calls[0].args.p_execution,'amm');assert.equal(done[0],'child-a');assert.match(app.text(),/More than one can happen/);
+});
+test('group cards and sibling navigation open the exact option and side, preserving independent prices',()=>{
+ const options=[{id:'a',title:'Physics · A',option_label:'A',probability:.75,status:'open',closes_at:'2099-01-01T12:00:00Z',volume:1},{id:'b',title:'Physics · B',option_label:'B',probability:.8,status:'open',closes_at:'2099-01-01T12:00:00Z',volume:2}],opened=[],stars=[];
+ const app=mount('GroupMarket.tsx',{listing:{title:'Physics',markets:options,openId:'a',volume:3,closesAt:Date.parse(options[0].closes_at)},open:(...args)=>opened.push(args),watched:[],watch:id=>stars.push(id)},{exportName:'GroupMarketCard'});app.render();assert.match(app.text(),/75%/);assert.match(app.text(),/80%/);app.nodes().filter(n=>n.type==='button'&&n.props.children==='No')[1].props.onClick();assert.deepEqual(opened[0],['b','no']);app.button('Star B').props.onClick();assert.equal(stars[0],'b');
+ const nav=mount('GroupMarket.tsx',{title:'Physics',markets:options,selected:'a',open:id=>opened.push([id]),back(){}},{exportName:'GroupNavigator'});nav.render();const second=nav.nodes().find(n=>n.type==='button'&&n.key==='b');second.props.onClick();assert.deepEqual(opened[1],['b']);
 });
