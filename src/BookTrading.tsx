@@ -40,7 +40,8 @@ export default function BookTrading({userId,market:m,side,setSide,balance,positi
  const opposite=side==='yes'?Math.max(0,-held):Math.max(0,held);
  const enough=factor>1?Number(budget)<=balance:cashHold<=Math.max(0,balance)+1e-8&&(balance>=0||qty<=opposite);
  const borrowed=loan?.market_id===m.id?Number(loan.remaining):factor>1?exposure-Number(budget):0;
- const returnValue=(preview.side===side.toUpperCase()?preview.shares:0)-borrowed,profit=side==='yes'?preview.yes:preview.no;
+ const repayNow=loan?.market_id===m.id&&preview.shares<.00000001?borrowed:0,cashNow=preview.cash-repayNow;
+ const returnValue=Math.max(0,preview.cash)+(preview.side===side.toUpperCase()?preview.shares:0)-borrowed,profit=side==='yes'?preview.yes:preview.no;
  const canLeverage=!loan&&Math.abs(held)<.00000001;
  const isOpen=!frozen&&m.status==='open'&&!m.paused&&!m.archived&&!m.history_deleted_at&&Date.parse(m.closes_at)>Date.now();
  const submit=async(intent:Intent)=>{
@@ -58,7 +59,7 @@ export default function BookTrading({userId,market:m,side,setSide,balance,positi
   if(isBook&&tif==='GTD'){try{expires=schoolDateTime(expiry).toISOString();}catch{setError('Choose an expiry in Europe/Zurich.');return;}}
   const fields={p_market:m.id,p_side:side,p_budget:Number(budget),p_factor:factor,p_price:limit,p_tif:isBook?tif:'GTC',p_expires:expires,p_min_shares:isBook?0:Math.floor(qty*.995*10000)/10000};
   const key=JSON.stringify(fields);if(nonce.current?.key!==key)nonce.current={key,id:crypto.randomUUID()};
-  const intent:Intent={...fields,p_request:nonce.current.id,quantity:qty,cash:preview.cash,finalSide:preview.side,finalShares:preview.shares,yes:preview.yes,no:preview.no,returnValue,profit,borrowed};
+  const intent:Intent={...fields,p_request:nonce.current.id,quantity:qty,cash:cashNow,finalSide:preview.side,finalShares:preview.shares,yes:preview.yes,no:preview.no,returnValue,profit,borrowed};
   flight.current=true;setBusy(true);
   try{
    const{data,error}=await supabase.rpc('loss_summary');if(error)throw error;
@@ -75,7 +76,7 @@ export default function BookTrading({userId,market:m,side,setSide,balance,positi
   <div className="trade-side"><button className={`yes-button ${side==='yes'?'chosen':''}`} aria-pressed={side==='yes'} onClick={()=>setSide('yes')}>Yes</button><button className={`no-button ${side==='no'?'chosen':''}`} aria-pressed={side==='no'} onClick={()=>setSide('no')}>No</button></div>
   <label className="quick-amount-label"><span className="bet-amount-heading">Amount <small>Available ◈ {fmt(balance)}</small></span><span>◈<input aria-label="Credits to bet" type="number" inputMode="decimal" min="0.01" step="0.01" value={budget} onChange={e=>setBudget(e.target.value)}/></span></label>
   <div className="amount-presets">{[10,25,100].map(n=><button key={n} onClick={()=>setBudget(String(n))}>◈ {n}</button>)}<button onClick={()=>setBudget(String(Math.max(0,Math.floor(balance*100)/100)))}>Max</button></div>
-  {valid&&<div className="trade-summary simple-bet-summary"><div className="potential"><span>{held!==0?'Total return':'To win'} if {side==='yes'?'Yes':'No'}{isBook&&<small>if matched</small>}</span><strong className={returnValue<0?'negative':''}>{returnValue<0?'−':''}◈ {fmt(Math.abs(returnValue))}</strong></div>{result(held!==0?'Total profit':'Profit',profit)}{preview.cash>0&&<div><span>Returned now{isBook?' if matched':''}</span><b>◈ {fmt(preview.cash)}</b></div>}</div>}
+  {valid&&<div className="trade-summary simple-bet-summary"><div className="potential"><span>{held!==0?'Total return':'To win'} if {side==='yes'?'Yes':'No'}{isBook&&<small>if matched</small>}</span><strong className={returnValue<0?'negative':''}>{returnValue<0?'−':''}◈ {fmt(Math.abs(returnValue))}</strong></div>{result(held!==0?'Total profit':'Profit',profit)}{preview.cash>0&&<div><span>{cashNow>=0?'Returned now':'Balance change now'}{isBook?' if matched':''}</span><b className={cashNow<0?'negative':''}>{cashNow<0?'−':''}◈ {fmt(Math.abs(cashNow))}</b></div>}</div>}
   {error&&<p className="form-error" role="alert">{error}</p>}
   <button className={`full trade-submit ${side==='yes'?'yes-submit':'no-submit'}`} disabled={busy||!loaded||!isOpen||!valid||!enough||(factor>1&&!canLeverage)} onClick={()=>void prepare()}>{frozen?'Account timed out':!isOpen?'Betting closed':busy?'Placing…':!loaded?'Loading…':!enough?'Insufficient credits':`Bet ${side==='yes'?'Yes':'No'}${factor>1?` · ${factor}×`:''}`}</button>
   <button className="advanced-bet-toggle" aria-expanded={advanced} aria-controls={`advanced-${m.id}`} onClick={()=>setAdvanced(!advanced)}>{advanced?'Hide advanced':'Advanced'}<span aria-hidden="true">{advanced?'−':'+'}</span></button>

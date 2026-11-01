@@ -52,3 +52,7 @@ test('simple view contains only amount and return/profit, and Advanced does not 
  const app=trading({asks:[{price:.65,size:100}]});app.render();await settle();app.render();assert.equal(app.nodes().filter(n=>n.type==='input').length,1);assert.match(app.text(),/To win if Yes/);assert.match(app.text(),/Profit/);assert.doesNotMatch(app.text(),/Direction amount|Your position|Position after|reduces your|Leverage|No fees|0.5%|Quantity/);
  app.button('Advanced').props.onClick();app.render();assert.equal(app.field('Limit price per share'),undefined);app.button('Hide advanced').props.onClick();app.render();await app.submit().props.onClick();await settle();assert.equal(app.calls.find(c=>c.name==='predict').args.p_price,.65);
 });
+
+test('flattening a borrowed position shows the net refund after immediate repayment',async()=>{
+ const app=trading({balance:0,positions:[{market_id:'m',side:'no',shares:100,net_cost:50}],loan:{market_id:'m',factor:5,remaining:40}});app.render();await settle();app.render();app.field('Credits to bet').props.onChange({target:{value:'50'}});app.render();assert.match(app.text(),/Total return if Yesif matched◈ 10/);assert.match(app.text(),/Returned now if matched◈ 10/);assert.match(app.text(),/Total profit\+◈ 0/);assert.equal(app.submit().props.disabled,false);
+});
