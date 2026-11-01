@@ -140,7 +140,7 @@ html[data-theme=dark] .trade-summary .negative {color:#ed9999!important;}
 /* Compact, fixed-layout cancel control; the label overlays rather than moving the page. */
 .clean-bet-panel .trade-side {display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) 44px;gap:8px;}
 .clean-bet-panel .trade-side {position:relative;min-height:44px;}
-.clean-bet-panel .trade-side>.cancel-bet {position:absolute;inset:0 0 0 auto;width:44px;min-height:44px;padding:0;display:flex;align-items:center;justify-content:center;gap:0;overflow:hidden;z-index:3;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--subtle);}
+.clean-bet-panel .trade-side>.cancel-bet {position:absolute;inset:0 0 0 auto;width:44px;min-height:44px;padding:0;display:flex;align-items:center;justify-content:center;gap:0;overflow:hidden;z-index:3;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--subtle);opacity:1;}
 .cancel-bet-label {position:static;max-width:0;opacity:0;white-space:nowrap;overflow:hidden;transform:translateX(6px);pointer-events:none;font-size:11px;}
 .clean-bet-panel .cancel-bet:focus-visible:not(:disabled) {width:100%;color:#cf6673;border-color:#9c4955;}
 .cancel-bet:focus-visible:not(:disabled) .cancel-bet-label {max-width:100px;margin-left:8px;opacity:1;transform:translateX(0);}

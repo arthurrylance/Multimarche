@@ -5,3 +5,11 @@ export function cardFace(card){if(card===null)return{rank:'',suit:'',red:false};
 export function wheelRotation(number){const index=wheel.indexOf(number);return index<0?0:1800+(360-index*360/37)%360;}
 export function wheelWedge(index){const a=(index-.5)*2*Math.PI/37-Math.PI/2,b=(index+.5)*2*Math.PI/37-Math.PI/2;return `M150 150L${150+138*Math.cos(a)} ${150+138*Math.sin(a)}A138 138 0 0 1 ${150+138*Math.cos(b)} ${150+138*Math.sin(b)}Z`;}
 export function plinkoPath(bits){let x=150;const points=['M150 12'];bits.forEach((bit,i)=>{if(bit!==0&&bit!==1)throw Error('Invalid path');const before=x;x+=bit===1?15:-15;points.push(`Q${before} ${40+i*26} ${x} ${53+i*26}`);});points.push(`L${x} 270`);return{path:points.join(' '),x};}
+
+export const plinkoDuration=2800;
+// Follow each server-selected deflection, with a small rebound at the next pin.
+export function plinkoPoint(bits,progress){
+ const points=[{x:150,y:12},...bits.map((bit,i)=>({x:150+bits.slice(0,i+1).reduce((sum,b)=>sum+(b?15:-15),0),y:53+i*26})),{x:150+bits.reduce((sum,b)=>sum+(b?15:-15),0),y:270}];
+ const scaled=Math.max(0,Math.min(1,progress))*(points.length-1),index=Math.min(points.length-2,Math.floor(scaled)),t=scaled-index,a=points[index],b=points[index+1];
+ return{x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t-7*Math.sin(Math.PI*t)};
+}
