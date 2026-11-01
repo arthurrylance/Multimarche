@@ -4,10 +4,10 @@ import {quote,sharesForBudget,netPreview} from '../src/math.mjs';
 import {quoteOrder,marketLimit} from '../src/orderbook.mjs';import {requiresTradeConfirmation} from '../src/interactions.mjs';import {schoolDateTime} from '../src/ending-times.mjs';
 const compiled=ts.transpileModule(readFileSync(new URL('../src/BookTrading.tsx',import.meta.url),'utf8'),{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX}}).outputText;
 const settle=()=>new Promise(resolve=>setImmediate(resolve));
-function trading({asks=[],positions=[],balance=1000,deferFill=false,loan=null,model='clob'}={}){
+function trading({asks=[],positions=[],balance=1000,deferFill=false,loan=null,model='clob',orders=[]}={}){
  const state=[],effects=[],pending=[],calls=[],messages=[];let cursor=0,tree,resolveFill;
  const hooks={useState:init=>{const i=cursor++;if(!(i in state))state[i]=typeof init==='function'?init():init;return[state[i],v=>{state[i]=typeof v==='function'?v(state[i]):v;}];},useRef:init=>{const i=cursor++;return state[i]??={current:init};},useCallback:fn=>{cursor++;return fn;},useEffect:(fn,deps)=>{const i=cursor++;if(!effects[i]||deps.some((v,j)=>v!==effects[i].deps[j])){effects[i]={deps};pending.push(fn);}}};
- const snapshot={bids:{yes:[],no:[]},asks:{yes:asks,no:[]},executable_bids:{yes:[],no:[]},executable_asks:{yes:asks,no:[]},orders:[]};
+ const snapshot={bids:{yes:[],no:[]},asks:{yes:asks,no:[]},executable_bids:{yes:[],no:[]},executable_asks:{yes:asks,no:[]},orders};
  const chain={select:()=>chain,eq:()=>chain,maybeSingle:async()=>({data:loan})};
  const supabase={from:()=>chain,rpc:async(name,args)=>{calls.push({name,args});if(name==='orderbook')return{data:snapshot};if(name==='loss_summary')return{data:{triggered:false}};if(name==='predict'){if(deferFill)await new Promise(r=>{resolveFill=r;});return{data:{status:'open',filled:0,remaining:args.p_budget/args.p_price,price:args.p_price}};}return{};}};
  const jsx=(type,props,key)=>({type,props:props??{},key}),module={exports:{}};
@@ -55,4 +55,14 @@ test('simple view contains only amount and return/profit, and Advanced does not 
 
 test('flattening a borrowed position shows the net refund after immediate repayment',async()=>{
  const app=trading({balance:0,positions:[{market_id:'m',side:'no',shares:100,net_cost:50}],loan:{market_id:'m',factor:5,remaining:40}});app.render();await settle();app.render();app.field('Credits to bet').props.onChange({target:{value:'50'}});app.render();assert.match(app.text(),/Total return if Yesif matched◈ 10/);assert.match(app.text(),/Returned now if matched◈ 10/);assert.match(app.text(),/Total profit\+◈ 0/);assert.equal(app.submit().props.disabled,false);
+});
+
+test('cancel clears an unsubmitted draft without any market mutation',async()=>{
+ const app=trading();app.render();await settle();app.render();app.field('Cancel bet').props.onClick();app.render();assert.equal(app.field('Credits to bet').props.value,'');assert.equal(app.calls.some(c=>c.name==='cancel_prediction'),false);
+});
+test('a placed bet needs confirmation before cancellation, including on touch/keyboard control',async()=>{
+ const app=trading({model:'amm',positions:[{market_id:'m',side:'yes',shares:100,net_cost:50}]});app.props.market.q_yes=100;app.render();await settle();app.render();app.field('Cancel bet').props.onClick();app.render();assert.ok(app.button('Confirm cancellation'));assert.equal(app.calls.some(c=>c.name==='cancel_prediction'),false);await app.button('Confirm cancellation').props.onClick();await settle();const request=app.calls.find(c=>c.name==='cancel_prediction');assert.equal(request.args.p_close,true);assert.ok(request.args.p_min_return>0);assert.equal('estimate' in request.args,false);
+});
+test('pending orders can be cancelled during a timeout without closing a held bet',async()=>{
+ const app=trading({orders:[{id:'o',status:'open'}],positions:[{market_id:'m',side:'yes',shares:10,net_cost:5}]});app.props.frozen=true;app.render();await settle();app.render();assert.equal(app.field('Cancel bet').props.disabled,false);app.field('Cancel bet').props.onClick();app.render();await app.button('Confirm cancellation').props.onClick();await settle();assert.equal(app.calls.find(c=>c.name==='cancel_prediction').args.p_close,false);
 });

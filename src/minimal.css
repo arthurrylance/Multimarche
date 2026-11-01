@@ -137,3 +137,35 @@ html[data-theme=dark] .trade-summary .negative {color:#ed9999!important;}
 .advanced-bet-options .net-position strong {font-size:16px;}
 .compact-book,.pending-bet-details {margin-top:18px;font-size:11px;}
 .compact-book>summary,.pending-bet-details>summary {cursor:pointer;color:var(--subtle);padding:6px 0;}
+/* Compact, fixed-layout cancel control; the label overlays rather than moving the page. */
+.clean-bet-panel .trade-side {display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) 44px;gap:8px;}
+.clean-bet-panel .trade-side>.cancel-bet {position:relative;display:grid;place-items:center;min-width:44px;min-height:44px;padding:0;border:1px solid var(--border);border-radius:6px;background:var(--surface-soft);color:var(--subtle);}
+.cancel-bet-label {position:absolute;z-index:2;right:calc(100% - 1px);top:-1px;bottom:-1px;display:flex;align-items:center;white-space:nowrap;padding:0 13px;border:1px solid var(--border);border-radius:6px 0 0 6px;background:var(--surface);color:var(--text);opacity:0;visibility:hidden;transform:translateX(8px);pointer-events:none;}
+.cancel-bet:is(:hover,:focus-visible):not(:disabled) .cancel-bet-label {visibility:visible;opacity:1;transform:translateX(0);pointer-events:none;}
+.clean-bet-panel .cancel-bet:is(:hover,:focus-visible):not(:disabled) {color:#cf6673;border-color:#9c4955;}
+.appearance-settings {margin-bottom:22px;}
+.appearance-settings>summary {display:flex;align-items:center;gap:9px;cursor:pointer;font-size:13px;font-weight:600;list-style:none;}
+.appearance-settings>summary:after {content:'+';margin-left:auto;}
+.appearance-settings[open]>summary:after {content:'−';}
+.appearance-options {display:grid;gap:13px;margin-top:20px;font-size:12px;max-width:400px;}
+.appearance-options>small,.performance-setting small {font-size:10px;color:var(--subtle);}
+.appearance-options .performance-setting {display:flex;align-items:center;justify-content:space-between;gap:16px;margin:5px 0;}
+.performance-setting small {display:block;margin-top:5px;font-weight:400;}
+.performance-setting input {width:38px;height:22px;accent-color:var(--text);cursor:pointer;}
+@keyframes mm-reveal {from{opacity:0}to{opacity:1}}
+@keyframes mm-dialog {from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+html[data-motion=on] :is(.market-grid,.detail-layout,.leader-table,.history-list,.settings-card,.advanced-bet-options,.notifications-panel) {animation:mm-reveal 160ms ease-out;}
+html[data-motion=on] .overlay {animation:mm-reveal 120ms ease-out;}
+html[data-motion=on] .modal {animation:mm-dialog 180ms cubic-bezier(.2,.7,.3,1);}
+html[data-motion=on] .toast {animation:mm-dialog 180ms ease-out;}
+html[data-motion=on] .cancel-bet-label {transition:opacity 160ms ease-out,transform 160ms ease-out,visibility 160ms;}
+html[data-motion=on] :is(button,.market-card,.group-market-card) {transition:transform 160ms ease-out,background-color 140ms ease-out,border-color 140ms ease-out,color 140ms ease-out;}
+@media(hover:hover) and (pointer:fine) {
+ html[data-motion=on] :is(.market-card,.group-market-card):hover {transform:translateY(-2px);}
+}
+@media(hover:hover) and (pointer:fine) {html[data-motion=on] button:not(:disabled):active {transform:scale(.985);}}
+@media(hover:none) {.cancel-bet-label {display:none;}}
+html[data-motion=off],html[data-motion=off] *,html[data-motion=off] *:before,html[data-motion=off] *:after {animation:none!important;transition:none!important;scroll-behavior:auto!important;}
+@media(prefers-reduced-motion:reduce) {
+ html,html *,html *:before,html *:after {animation:none!important;transition:none!important;scroll-behavior:auto!important;}
+}

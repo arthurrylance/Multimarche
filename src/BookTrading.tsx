@@ -1,6 +1,7 @@
 import {useCallback,useEffect,useRef,useState} from 'react';
 import {supabase} from './db';
 import Modal from './Modal';
+import {X} from 'lucide-react';
 import {OrdersList} from './MyOrders';
 import {automaticPrice} from './quick-bet.mjs';
 import {quoteOrder} from './orderbook.mjs';
@@ -9,14 +10,17 @@ import type {BookLevel} from './orderbook.mjs';
 import type {Market,Position,BookOrder} from './types';
 import {requiresTradeConfirmation} from './interactions.mjs';
 import {schoolDateTime} from './ending-times.mjs';
-type Snapshot={bids:Record<string,BookLevel[]>;asks:Record<string,BookLevel[]>;executable_asks:Record<string,BookLevel[]>;orders:BookOrder[]};
+type Snapshot={bids:Record<string,BookLevel[]>;asks:Record<string,BookLevel[]>;executable_asks:Record<string,BookLevel[]>;executable_bids?:Record<string,BookLevel[]>;orders:BookOrder[]};
 type Loan={market_id:string;factor:number;remaining:number};
+type CancelIntent={p_market:string;p_close:boolean;p_min_return:number;p_price:number|null;p_request:string;estimate:number};
 type Intent={p_market:string;p_side:'yes'|'no';p_budget:number;p_factor:number;p_price:number|null;p_tif:string;p_expires:string|null;p_min_shares:number;p_request:string;quantity:number;cash:number;finalSide:string;finalShares:number;yes:number;no:number;returnValue:number;profit:number;borrowed:number};
 const fmt=(n:number,d=2)=>Number(n).toLocaleString(undefined,{maximumFractionDigits:d});
 export default function BookTrading({userId,market:m,side,setSide,balance,positions,frozen,tick,refresh,notify}:{userId:string;market:Market;side:'yes'|'no';setSide:(s:'yes'|'no')=>void;balance:number;positions:Position[];frozen:boolean;tick:number;refresh:()=>void;notify:(s:string)=>void}){
  const isBook=m.execution_model==='clob';
  const[book,setBook]=useState<Snapshot|null>(null),[loan,setLoan]=useState<Loan|null>(null),[loaded,setLoaded]=useState(false),[advanced,setAdvanced]=useState(false),[customPrice,setCustomPrice]=useState(false),[budget,setBudget]=useState('25'),[factor,setFactor]=useState(1),[price,setPrice]=useState(String(Number(side==='yes'?m.probability:1-m.probability).toFixed(4))),[tif,setTif]=useState('GTC'),[expiry,setExpiry]=useState('');
  const[busy,setBusy]=useState(false),[error,setError]=useState(''),[review,setReview]=useState<Intent|null>(null),[warning,setWarning]=useState<{intent:Intent;loss:number;ratio:number;key:string}|null>(null);
+ const[cancelReview,setCancelReview]=useState<CancelIntent|null>(null);
+ const closeCancel=useCallback(()=>setCancelReview(null),[]);
  const flight=useRef(false),nonce=useRef<{key:string;id:string}|null>(null);
  const closeReview=useCallback(()=>setReview(null),[]),closeWarning=useCallback(()=>setWarning(null),[]);
  useEffect(()=>{setPrice(String(Number(side==='yes'?m.probability:1-m.probability).toFixed(4)));setError('');},[side,m.id]);
@@ -70,10 +74,25 @@ export default function BookTrading({userId,market:m,side,setSide,balance,positi
  };
  const continueWarning=()=>{if(!warning)return;try{sessionStorage.setItem(`multimarche-loss-${userId}`,warning.key);}catch{}const intent=warning.intent;setWarning(null);reviewOrSubmit(intent);};
  const cancel=async(id:string|null)=>{if(flight.current)return;flight.current=true;setBusy(true);try{const{error}=id?await supabase.rpc('cancel_order',{p_order:id}):await supabase.rpc('cancel_my_orders',{p_market:m.id});if(error)throw error;refresh();notify('Unmatched amount released.');}catch(e){setError((e as {message?:string}).message||'Could not cancel.');}finally{flight.current=false;setBusy(false);}};
+ const hasPending=!!book?.orders.some(o=>o.status==='open');
+ const clearDraft=()=>{setError('');setBudget('');setFactor(1);setReview(null);setWarning(null);nonce.current=null;};
+ const prepareCancel=()=>{
+  if(flight.current)return;setError('');
+  if(held===0&&!hasPending){clearDraft();return;}
+  const closing=held!==0&&isOpen,heldSide=held>0?'yes':'no';
+  const exitPrice=isBook?Math.max(.0001,Math.floor(automaticPrice(book?.executable_bids?.[heldSide]??[],'sell',held>0?m.probability:1-m.probability)*.995*10000)/10000):null;
+  const gross=closing?(isBook?Math.abs(held)*exitPrice!:quote(m,heldSide,'sell',Math.abs(held))):0;
+  setCancelReview({p_market:m.id,p_close:closing,p_min_return:closing&&!isBook?gross*.995:0,p_price:exitPrice,p_request:crypto.randomUUID(),estimate:gross-(closing&&loan?.market_id===m.id?Number(loan.remaining):0)});
+ };
+ const executeCancel=async(intent:CancelIntent)=>{
+  if(flight.current)return;flight.current=true;setBusy(true);setError('');
+  try{const{estimate:_,...args}=intent;const{data,error}=await supabase.rpc('cancel_prediction',args);if(error)throw error;setCancelReview(null);clearDraft();refresh();notify(data?.orders?.some((o:BookOrder)=>o.status==='open')?'Closing bet placed. Unmatched amounts are waiting.':'Bet cancelled.');}
+  catch(e){setError((e as {message?:string}).message||'Could not cancel bet.');}finally{flight.current=false;setBusy(false);}
+ };
  const result=(label:string,value:number)=><div><span>{label}</span><b className={value>=0?'positive':'negative'}>{value>=0?'+':'−'}◈ {fmt(Math.abs(value))}</b></div>;
  return <aside className="trade-panel book-trading simple-trading clean-bet-panel">
   <h3 className="bet-panel-title">Place a bet</h3>
-  <div className="trade-side"><button className={`yes-button ${side==='yes'?'chosen':''}`} aria-pressed={side==='yes'} onClick={()=>setSide('yes')}>Yes</button><button className={`no-button ${side==='no'?'chosen':''}`} aria-pressed={side==='no'} onClick={()=>setSide('no')}>No</button></div>
+  <div className="trade-side"><button className={`yes-button ${side==='yes'?'chosen':''}`} aria-pressed={side==='yes'} onClick={()=>setSide('yes')}>Yes</button><button className={`no-button ${side==='no'?'chosen':''}`} aria-pressed={side==='no'} onClick={()=>setSide('no')}>No</button><button type="button" className="cancel-bet" aria-label="Cancel bet" disabled={busy||!loaded||(held!==0&&!isOpen&&!hasPending)} onClick={prepareCancel}><X size={16} aria-hidden="true"/><span className="cancel-bet-label" aria-hidden="true">Cancel bet</span></button></div>
   <label className="quick-amount-label"><span className="bet-amount-heading">Amount <small>Available ◈ {fmt(balance)}</small></span><span>◈<input aria-label="Credits to bet" type="number" inputMode="decimal" min="0.01" step="0.01" value={budget} onChange={e=>setBudget(e.target.value)}/></span></label>
   <div className="amount-presets">{[10,25,100].map(n=><button key={n} onClick={()=>setBudget(String(n))}>◈ {n}</button>)}<button onClick={()=>setBudget(String(Math.max(0,Math.floor(balance*100)/100)))}>Max</button></div>
   {valid&&<div className="trade-summary simple-bet-summary"><div className="potential"><span>{held!==0?'Total return':'To win'} if {side==='yes'?'Yes':'No'}{isBook&&<small>if matched</small>}</span><strong className={returnValue<0?'negative':''}>{returnValue<0?'−':''}◈ {fmt(Math.abs(returnValue))}</strong></div>{result(held!==0?'Total profit':'Profit',profit)}{preview.cash>0&&<div><span>{cashNow>=0?'Returned now':'Balance change now'}{isBook?' if matched':''}</span><b className={cashNow<0?'negative':''}>{cashNow<0?'−':''}◈ {fmt(Math.abs(cashNow))}</b></div>}</div>}
@@ -83,7 +102,6 @@ export default function BookTrading({userId,market:m,side,setSide,balance,positi
   {advanced&&<section className="advanced-bet-options" id={`advanced-${m.id}`} aria-label="Advanced betting">
    <div className="net-position"><small>Your bet</small><strong className={held>0?'positive':held<0?'negative':''}>{held===0?'No open bet':`Backing ${held>0?'Yes':'No'}`}</strong>{held!==0&&<small>◈ {fmt(Math.abs(held),0)} potential payout</small>}</div>
    <div className="trade-summary"><div><span>After this bet</span><b>{preview.shares>0?`${preview.side==='YES'?'Yes':'No'} · ◈ ${fmt(preview.shares,0)}`:'No open bet'}</b></div>{result('Net result if Yes',preview.yes)}{result('Net result if No',preview.no)}</div>
-   <p className="tiny muted">Betting the opposite way reduces your old bet first, then switches sides.</p>
    <label>Leverage</label><div className="leverage-picker" role="group" aria-label="Leverage">{[1,5,10].map(n=><button key={n} aria-pressed={factor===n} disabled={n>1&&!canLeverage} onClick={()=>setFactor(n)}>{n}×</button>)}</div>
    {factor>1&&<p className="leverage-note">◈ {fmt(Number(budget))} stake + ◈ {fmt(exposure-Number(budget))} borrowed. Maximum loss ◈ {fmt(exposure)}. Losses can leave your balance negative.</p>}
    {loan&&<p className="tiny muted">One leveraged market at a time.{loan.market_id===m.id?` ◈ ${fmt(loan.remaining)} to repay.`:''}</p>}
@@ -93,6 +111,7 @@ export default function BookTrading({userId,market:m,side,setSide,balance,positi
    {isBook&&<details className="compact-book"><summary>Order book</summary><section className="book-depth"><div className="depth-head"><span>Price ◈</span><span>Quantity</span></div><h4>Offers</h4>{(book?.asks[side]??[]).slice(0,8).map(l=><button key={l.price} onClick={()=>{setCustomPrice(true);setPrice(String(l.price));}}><span className="negative">{fmt(l.price,4)}</span><span>{fmt(l.size,0)}</span></button>)}<h4>Bids</h4>{(book?.bids[side]??[]).slice(0,8).map(l=><div className="depth-head" key={l.price}><span className="positive">{fmt(l.price,4)}</span><span>{fmt(l.size,0)}</span></div>)}</section></details>}
   </section>}
   {isBook&&book?.orders.some(o=>o.status==='open')&&<details className="pending-bet-details"><summary>Pending bets</summary><section className="market-open-orders"><button className="text-button" disabled={busy} onClick={()=>void cancel(null)}>Cancel all</button><OrdersList orders={book.orders} busy={busy} cancel={id=>void cancel(id)}/></section></details>}
+  {cancelReview&&<Modal title="Cancel bet?" onClose={closeCancel}><div className="bet-review"><p>{m.title}</p>{cancelReview.p_close?<><dl><div><dt>{isBook?'Estimated return if matched':'Estimated return'}</dt><dd>◈ {fmt(cancelReview.estimate)}</dd></div></dl>{loan?.market_id===m.id&&<p>Includes repayment of your borrowing.</p>}{isBook&&<p>Closing needs a matching buyer. Any unfilled part waits.</p>}</>:<p>Cancel your unmatched bets and release their credits?</p>}{error&&<p className="form-error" role="alert">{error}</p>}<div className="confirm-actions"><button className="secondary" disabled={busy} onClick={closeCancel}>Keep bet</button><button className="primary" disabled={busy} onClick={()=>void executeCancel(cancelReview)}>{busy?'Cancelling…':'Confirm cancellation'}</button></div></div></Modal>}
   {review&&<Modal title="Confirm bet" onClose={closeReview}><div className="bet-review"><p>{m.title}</p><dl><div><dt>Bet</dt><dd>{review.p_side==='yes'?'Yes':'No'}{review.p_factor>1?` · ${review.p_factor}×`:''}</dd></div><div><dt>Amount</dt><dd>◈ {fmt(review.p_budget)}</dd></div><div><dt>Return if correct{isBook?' and matched':''}</dt><dd>◈ {fmt(review.returnValue)}</dd></div><div><dt>Profit</dt><dd>◈ {fmt(review.profit)}</dd></div>{review.p_factor>1&&<><div><dt>Borrowed</dt><dd>◈ {fmt(review.p_budget*(review.p_factor-1))}</dd></div><div><dt>Maximum loss</dt><dd>◈ {fmt(review.p_budget*review.p_factor)}</dd></div></>}</dl>{review.p_factor>1&&<p>Borrowing is repaid when this bet closes. Losing can leave your balance negative.</p>}{error&&<p className="form-error">{error}</p>}<div className="confirm-actions"><button className="secondary" disabled={busy} onClick={closeReview}>Cancel</button><button className="primary" disabled={busy} onClick={()=>void submit(review)}>{busy?'Placing…':'Confirm'}</button></div></div></Modal>}
   {warning&&<Modal title="Responsible gambling*" onClose={closeWarning}><div className="loss-warning"><span className="eyebrow">*Satire · virtual credits only</span><h3>You’ve lost ◈ {fmt(warning.loss)} in the last 24 hours.</h3><p>That’s {fmt(warning.ratio*100,1)}% of your bankroll. Are you sure you want to continue?</p><div className="confirm-actions"><button className="secondary" onClick={continueWarning}>Yes</button><button className="primary" onClick={continueWarning}>Hell yeah!</button></div></div></Modal>}
  </aside>;
