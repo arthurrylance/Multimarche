@@ -1,0 +1,39 @@
+alter table public.casino_rounds drop constraint casino_rounds_stake_check;
+alter table public.casino_rounds add constraint casino_rounds_stake_check check(stake>=1 and stake=trunc(stake) and stake::text not in('NaN','Infinity','-Infinity') and (game='plinko' or stake<=5));
+create or replace function private.casino_start(p_game text,p_stake numeric,p_choice text,p_request uuid) returns jsonb language plpgsql security definer set search_path='' as $$
+declare uid uuid:=private.require_player();spec jsonb;prior private.casino_requests;r public.casino_rounds;round_id bigint;spent numeric;max_return numeric;deck integer[];player integer[];dealer integer[];i integer;j integer;swap integer;number integer;won boolean;red boolean;slot integer:=0;path jsonb:='[]';multiplier numeric;view jsonb;ps integer;ds integer;
+begin
+ perform pg_advisory_xact_lock(84271001);spec:=jsonb_build_object('kind','start','game',p_game,'stake',p_stake,'choice',p_choice);
+ select * into prior from private.casino_requests where request_id=p_request;
+ if found then if prior.user_id<>uid or prior.spec<>spec then raise exception 'Request ID already used';end if;return(select to_jsonb(cr) from public.casino_rounds cr where id=(prior.result->>'id')::uuid);end if;
+ if p_request is null or p_game is null or p_game not in('blackjack','roulette','plinko') or p_stake is null or p_stake::text in('NaN','Infinity','-Infinity') or (p_stake<1 or (p_game<>'plinko' and p_stake>5)) or p_stake<>trunc(p_stake) then raise exception '%',case when p_game='plinko' then 'Choose a whole-credit stake of at least 1' else 'Choose a stake of 1–5 credits' end;end if;
+ if p_game='roulette' and (p_choice is null or p_choice not in('red','black','odd','even')) then raise exception 'Choose red, black, odd or even';end if;
+ if p_game<>'roulette' and p_choice is not null then raise exception 'This game does not use a roulette choice';end if;
+ if p_game='blackjack' and exists(select 1 from public.casino_rounds where user_id=uid and game='blackjack' and status='active') then raise exception 'Finish your current blackjack hand first';end if;
+ select reset_version into round_id from private.economy where id=1;
+ select coalesce(sum(stake),0) into spent from public.casino_rounds where user_id=uid and economy_round=round_id and created_at>=date_trunc('day',now() at time zone 'Europe/Zurich') at time zone 'Europe/Zurich';
+ if spent+p_stake>(select casino_daily_limit from private.game_settings where id=1) then raise exception 'Daily games budget reached';end if;
+ if not exists(select 1 from public.wallets where user_id=uid and balance-reserved_balance-loan_collateral>=p_stake) then raise exception 'Insufficient available owned credits';end if;
+ max_return:=p_stake*case p_game when 'blackjack' then 2.5 when 'roulette' then 2 else 8 end;
+ insert into public.casino_rounds(user_id,game,stake,max_payout,economy_round) values(uid,p_game,p_stake,max_return,round_id) returning * into r;
+ update public.wallets set balance=balance-p_stake where user_id=uid;insert into public.ledger(user_id,amount,reason) values(uid,-p_stake,'Games: '||p_game||' stake');
+ insert into private.credit_accounts(id,balance) values('casino:'||r.id,0);perform private.transfer('treasury','casino:'||r.id,max_return,'Games payout reserve',null);
+ if p_game='roulette' then
+  number:=private.casino_random(37);red:=number=any(array[1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36]);
+  won:=number<>0 and case p_choice when 'red' then red when 'black' then not red when 'odd' then number%2=1 else number%2=0 end;
+  perform private.casino_finish(r.id,case when won then 'win' else 'loss' end,case when won then p_stake*2 else 0 end,jsonb_build_object('number',number,'choice',p_choice));
+ elsif p_game='plinko' then
+  for i in 1..8 loop j:=private.casino_random(2);slot:=slot+j;path:=path||jsonb_build_array(j);end loop;
+  multiplier:=(array[8,3,1.5,.7,.4,.7,1.5,3,8]::numeric[])[slot+1];
+  perform private.casino_finish(r.id,case when multiplier>1 then 'win' when multiplier=1 then 'push' else 'loss' end,p_stake*multiplier,jsonb_build_object('path',path,'slot',slot,'multiplier',multiplier));
+ else
+  select array_agg(n order by n) into deck from generate_series(0,51) n;
+  for i in reverse 52..2 loop j:=private.casino_random(i)+1;swap:=deck[i];deck[i]:=deck[j];deck[j]:=swap;end loop;
+  player:=array[deck[1],deck[3]];dealer:=array[deck[2],deck[4]];
+  insert into private.casino_hands values(r.id,deck,player,dealer,5);ps:=private.blackjack_score(player);ds:=private.blackjack_score(dealer);
+  if ps=21 or ds=21 then perform private.casino_finish(r.id,case when ps=21 and ds=21 then 'push' when ps=21 then 'blackjack' else 'loss' end,case when ps=21 and ds=21 then p_stake when ps=21 then p_stake*2.5 else 0 end,private.blackjack_view(r.id,true));
+  else update public.casino_rounds set state=private.blackjack_view(r.id,false) where id=r.id;end if;
+ end if;
+ select * into r from public.casino_rounds where id=r.id;insert into private.casino_requests values(p_request,uid,spec,to_jsonb(r));return to_jsonb(r);
+end $$;
+

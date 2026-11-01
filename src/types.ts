@@ -7,4 +7,4 @@ export type Comment = {id:string;user_id:string;market_id:string;body:string;cre
 
 export type AdminMember=Profile&{balance:number;reserved_balance?:number;admin:boolean;active:boolean;deleted_at:string|null;auth_deleted_at:string|null;created_at:string;equity:number;open_bets:number;spent:number;sales:number;payouts:number};
 
-export type BookOrder={id:string;market_id:string;side:'yes'|'no';action:'buy'|'sell';price:number;quantity:number;filled:number;remaining:number;status:string;tif:string;expires_at:string;created_at:string};
+export type BookOrder={net_remaining?:number;id:string;market_id:string;side:'yes'|'no';action:'buy'|'sell';price:number;quantity:number;filled:number;remaining:number;status:string;tif:string;expires_at:string;created_at:string};

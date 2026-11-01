@@ -310,3 +310,54 @@ html[data-motion=on] .game-section {transition:opacity 140ms ease-out;}
  .games-sections {gap:22px;}
  .game-wallet {min-width:110px;}
 }
+/* Fill the play area while keeping the controls and both game sections aligned. */
+.games-page {--game-play-size:clamp(280px,calc(46vw - 140px),460px);}
+.game-tabs {gap:24px;}
+.games-page .game-tabs button {border:0;border-bottom:1px solid transparent;border-radius:0;background:none;padding:10px 2px;color:var(--subtle);font-weight:500;}
+.games-page .game-tabs button[aria-pressed=true] {background:none;border-color:var(--text);color:var(--text);font-weight:650;}
+.games-page .game-tabs button:hover:not(:disabled) {color:var(--text);}
+.roulette-table,.plinko-table {width:var(--game-play-size);max-width:100%;}
+.roulette-result {font-size:clamp(40px,5vw,64px);}
+.blackjack-table {max-width:680px;gap:clamp(10px,1vw,16px);}
+.playing-card {width:clamp(54px,6vw,78px);height:clamp(78px,8.67vw,112px);font-size:clamp(20px,2vw,28px);}
+.playing-card b {font-size:clamp(17px,1.7vw,24px);}
+.hand-label {font-size:12px;}
+.card-hand {gap:clamp(8px,1vw,14px);}
+.plinko-bins span {font-size:clamp(9px,.9vw,12px);}
+@keyframes mm-plinko-hit {0%,18%{background:#fff;color:#080808;border-color:#fff;box-shadow:0 0 16px #ffffff80;transform:translateY(-2px)}100%{box-shadow:0 0 0 #ffffff00;transform:translateY(0)}}
+html[data-motion=on] .plinko-bins .bin-hit {animation:mm-plinko-hit 420ms ease-out;}
+@media(max-width:700px){
+ .games-page {--game-play-size:240px;}
+ .games-page .game-table {padding:16px;}
+ .game-tabs {gap:20px;}
+ .playing-card {width:52px;height:75px;}
+ .blackjack-table {gap:10px;}
+ .table-mark {padding:5px 0;}
+}
+.market-card {cursor:pointer;}
+.current-position-summary {padding:0 0 20px;margin-bottom:22px;border-bottom:1px solid var(--border);}
+.current-position-summary h3 {font-size:14px;margin-bottom:14px;}
+.position-facts {display:grid;gap:8px;margin-bottom:15px;font-size:11px;}
+.position-facts>strong {font-size:18px;}
+.position-facts>span {display:flex;align-items:center;justify-content:space-between;gap:10px;color:var(--subtle);}
+.position-facts b {color:var(--text);font-weight:600;font-variant-numeric:tabular-nums;}
+.position-outcomes {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}
+.current-position-summary .position-outcomes {grid-template-columns:repeat(3,minmax(0,1fr));}
+.position-outcomes section {min-width:0;border:1px solid var(--border);border-radius:6px;padding:10px 8px;}
+.position-outcomes h4 {font-size:11px;font-weight:650;margin:0 0 12px;}
+.position-outcomes dl {margin:0;display:grid;gap:12px;}
+.position-outcomes dl>div {display:grid;gap:5px;}
+.position-outcomes dt {font-size:9px;color:var(--subtle);}
+.position-outcomes dd {font-size:12px;margin:0;font-variant-numeric:tabular-nums;overflow-wrap:anywhere;}
+.position-outcomes small {display:block;font-size:9px;color:var(--subtle);line-height:1.6;margin-top:10px;}
+.prediction-preview {border-top:1px solid var(--border);padding-top:16px;margin:18px 0;}
+.preview-net-position {display:grid;gap:8px;margin-bottom:16px;font-size:11px;}
+.preview-net-position>span {color:var(--subtle);}
+.preview-net-position strong {font-size:16px;}
+.preview-net-position small {font-size:10px;color:var(--subtle);}
+.immediate-returns {display:grid;gap:12px;margin-bottom:16px;}
+.immediate-returns>div {display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:11px;}
+.immediate-returns>div>span {color:var(--subtle);}
+.immediate-returns b {font-variant-numeric:tabular-nums;}
+.projection-note {font-size:10px;color:var(--subtle);line-height:1.7;margin:12px 0 0;}
+.bet-review .prediction-preview {margin-bottom:20px;}

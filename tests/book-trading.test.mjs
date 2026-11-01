@@ -1,17 +1,21 @@
 import test from 'node:test';import assert from 'node:assert/strict';import vm from 'node:vm';import {readFileSync} from 'node:fs';import {randomUUID} from 'node:crypto';import ts from 'typescript';
 import {automaticPrice,quantityForCredits,sellFraction} from '../src/quick-bet.mjs';
 import {quote,sharesForBudget,netPreview} from '../src/math.mjs';
+import * as positionMath from '../src/position-preview.mjs';
 import {quoteOrder,marketLimit} from '../src/orderbook.mjs';import {requiresTradeConfirmation} from '../src/interactions.mjs';import {schoolDateTime} from '../src/ending-times.mjs';
 const compiled=ts.transpileModule(readFileSync(new URL('../src/BookTrading.tsx',import.meta.url),'utf8'),{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX}}).outputText;
 const settle=()=>new Promise(resolve=>setImmediate(resolve));
-function trading({asks=[],positions=[],balance=1000,deferFill=false,loan=null,model='clob',orders=[]}={}){
+function trading({asks=[],positions=[],balance=1000,deferFill=false,loan=null,model='clob',orders=[],bids=[]}={}){
  const state=[],effects=[],pending=[],calls=[],messages=[];let cursor=0,tree,resolveFill;
  const hooks={useState:init=>{const i=cursor++;if(!(i in state))state[i]=typeof init==='function'?init():init;return[state[i],v=>{state[i]=typeof v==='function'?v(state[i]):v;}];},useRef:init=>{const i=cursor++;return state[i]??={current:init};},useCallback:fn=>{cursor++;return fn;},useEffect:(fn,deps)=>{const i=cursor++;if(!effects[i]||deps.some((v,j)=>v!==effects[i].deps[j])){effects[i]={deps};pending.push(fn);}}};
- const snapshot={bids:{yes:[],no:[]},asks:{yes:asks,no:[]},executable_bids:{yes:[],no:[]},executable_asks:{yes:asks,no:[]},orders};
+ const snapshot={bids:{yes:[],no:[]},asks:{yes:asks,no:[]},executable_bids:{yes:bids,no:bids},executable_asks:{yes:asks,no:[]},orders};
  const chain={select:()=>chain,eq:()=>chain,maybeSingle:async()=>({data:loan})};
  const supabase={from:()=>chain,rpc:async(name,args)=>{calls.push({name,args});if(name==='orderbook')return{data:snapshot};if(name==='loss_summary')return{data:{triggered:false}};if(name==='predict'){if(deferFill)await new Promise(r=>{resolveFill=r;});return{data:{status:'open',filled:0,remaining:args.p_budget/args.p_price,price:args.p_price}};}return{};}};
- const jsx=(type,props,key)=>({type,props:props??{},key}),module={exports:{}};
- vm.runInNewContext(compiled,{exports:module.exports,require:name=>name==='react'?hooks:name==='react/jsx-runtime'?{jsx,jsxs:jsx}:name==='./db'?{supabase}:name==='./math.mjs'?{quote,sharesForBudget,netPreview}:name==='./orderbook.mjs'?{quoteOrder,marketLimit}:name==='./quick-bet.mjs'?{automaticPrice,quantityForCredits,sellFraction}:name==='./interactions.mjs'?{requiresTradeConfirmation}:name==='./ending-times.mjs'?{schoolDateTime}:new Proxy({},{get:()=>()=>null}),Date,crypto:{randomUUID},sessionStorage:{getItem:()=>'',setItem(){}},setInterval:()=>1,clearInterval(){}});
+ const summaryModule={exports:{}},raw=(type,props,key)=>({type,props:props??{},key});
+ const summaryJsx=(type,props,key)=>typeof type==='function'?type(props):raw(type,props,key);
+ vm.runInNewContext(ts.transpileModule(readFileSync(new URL('../src/PositionSummary.tsx',import.meta.url),'utf8'),{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX}}).outputText,{exports:summaryModule.exports,require:()=>({jsx:summaryJsx,jsxs:summaryJsx})});
+ const jsx=(type,props,key)=>Object.values(summaryModule.exports).includes(type)?type(props):raw(type,props,key),module={exports:{}};
+ vm.runInNewContext(compiled,{exports:module.exports,require:name=>name==='react'?hooks:name==='react/jsx-runtime'?{jsx,jsxs:jsx}:name==='./db'?{supabase}:name==='./position-preview.mjs'?positionMath:name==='./PositionSummary'?summaryModule.exports:name==='./math.mjs'?{quote,sharesForBudget,netPreview}:name==='./orderbook.mjs'?{quoteOrder,marketLimit}:name==='./quick-bet.mjs'?{automaticPrice,quantityForCredits,sellFraction}:name==='./interactions.mjs'?{requiresTradeConfirmation}:name==='./ending-times.mjs'?{schoolDateTime}:new Proxy({},{get:()=>()=>null}),Date,crypto:{randomUUID},sessionStorage:{getItem:()=>'',setItem(){}},setInterval:()=>1,clearInterval(){}});
  const props={userId:'a',market:{id:'m',title:'A question?',execution_model:model,q_yes:0,q_no:0,liquidity:400,initial_probability:.5,status:'open',probability:.5,price_available:false,closes_at:new Date(Date.now()+3600000).toISOString()},side:'yes',setSide(){},balance,positions,frozen:false,tick:0,refresh(){},notify:x=>messages.push(x)};
  const walk=node=>!node||typeof node!=='object'?[]:Array.isArray(node)?node.flatMap(walk):[node,...walk(node.props?.children)];
  const text=node=>node==null||typeof node==='boolean'?'':typeof node!=='object'?String(node):Array.isArray(node)?node.map(text).join(''):node.props?.['aria-hidden']?'':text(node.props?.children);
@@ -25,16 +29,15 @@ test('simple prediction only asks for direction and credits; no shares or cash-o
 test('simple book predictions choose best executable price and leave matching to the server',async()=>{
  const app=trading({asks:[{price:.75,size:20},{price:.65,size:1}]});app.render();await settle();app.render();app.field('Credits to bet').props.onChange({target:{value:'10'}});app.render();await app.submit().props.onClick();await settle();const order=app.calls.find(c=>c.name==='predict');assert.equal(order.args.p_price,.65);assert.equal(order.args.p_budget,10);assert.equal('p_quantity' in order.args,false);
 });
-test('positions are hidden by default and rounded in Advanced; netting preview stays correct',async()=>{
- const app=trading({positions:[{market_id:'m',side:'no',shares:20.205,net_cost:8}]});app.render();await settle();app.render();assert.doesNotMatch(app.text(),/Your bet|Backing No|20.205|Leverage|Net result/);assert.equal(app.button('5×'),undefined);
- app.button('Advanced').props.onClick();app.render();assert.match(app.text(),/Backing No/);assert.match(app.text(),/20 potential payout/);assert.doesNotMatch(app.text(),/20.205/);
- app.field('Credits to bet').props.onChange({target:{value:'5'}});app.render();assert.match(app.text(),/After this betNo · ◈ 10/);app.field('Credits to bet').props.onChange({target:{value:'15'}});app.render();assert.match(app.text(),/After this betYes · ◈ 10/);
+test('position facts and net changes are visible without Advanced; leverage stays in Advanced',async()=>{
+ const app=trading({positions:[{market_id:'m',side:'no',shares:20.205,net_cost:8}]});app.render();await settle();app.render();assert.match(app.text(),/Your current bet/);assert.match(app.text(),/Paid for shares/);assert.match(app.text(),/Shares owned 20.21/);assert.equal(app.button('5×'),undefined);
+ app.field('Credits to bet').props.onChange({target:{value:'5'}});app.render();assert.match(app.text(),/Reduces No/);assert.match(app.text(),/10.21 No shares/);app.field('Credits to bet').props.onChange({target:{value:'15'}});app.render();assert.match(app.text(),/Switches to Yes/);assert.match(app.text(),/9.8 Yes shares/);app.button('Advanced').props.onClick();app.render();assert.ok(app.button('5×'));
 });
 test('zero available cash can still reduce an opposite position',async()=>{
  const app=trading({balance:0,positions:[{market_id:'m',side:'no',shares:100,net_cost:50}]});app.render();await settle();app.render();assert.equal(app.submit().props.disabled,false);await app.submit().props.onClick();await settle();assert.equal(app.calls.filter(c=>c.name==='predict').length,1);app.props.frozen=true;app.render();assert.equal(app.submit().props.disabled,true);
 });
 test('leverage lives in Advanced, requires only the stake, and warns about negative balances',async()=>{
- const app=trading({balance:10});app.render();await settle();app.render();app.button('Advanced').props.onClick();app.render();app.button('10×').props.onClick();app.field('Credits to bet').props.onChange({target:{value:'10'}});app.render();assert.equal(app.submit().props.disabled,false);assert.match(app.text(),/can leave your balance negative/);await app.submit().props.onClick();await settle();app.render();assert.equal(app.calls.filter(c=>c.name==='predict').length,0);assert.match(app.text(),/Maximum loss◈ 100/);assert.match(app.text(),/Return if correct and matched◈ 110/);assert.ok(app.button('Confirm'));
+ const app=trading({balance:10});app.render();await settle();app.render();app.button('Advanced').props.onClick();app.render();app.button('10×').props.onClick();app.field('Credits to bet').props.onChange({target:{value:'10'}});app.render();assert.equal(app.submit().props.disabled,false);assert.match(app.text(),/can leave your balance negative/);await app.submit().props.onClick();await settle();app.render();assert.equal(app.calls.filter(c=>c.name==='predict').length,0);assert.match(app.text(),/Maximum loss◈ 100/);assert.match(app.text(),/If YesTotal return◈ 110/);assert.ok(app.button('Confirm'));
  const held=trading({positions:[{market_id:'m',side:'yes',shares:1,net_cost:.5}]});held.render();await settle();held.render();held.button('Advanced').props.onClick();held.render();assert.equal(held.button('5×').props.disabled,true);
  const borrowed=trading({loan:{market_id:'another',factor:5,remaining:40}});borrowed.render();await settle();borrowed.render();borrowed.button('Advanced').props.onClick();borrowed.render();assert.equal(borrowed.button('10×').props.disabled,true);
 });
@@ -49,20 +52,24 @@ test('automatic uses same direction interface and protects the reviewed weighted
 });
 
 test('simple view contains only amount and return/profit, and Advanced does not change the automatic price',async()=>{
- const app=trading({asks:[{price:.65,size:100}]});app.render();await settle();app.render();assert.equal(app.nodes().filter(n=>n.type==='input').length,1);assert.match(app.text(),/To win if Yes/);assert.match(app.text(),/Profit/);assert.doesNotMatch(app.text(),/Direction amount|Your position|Position after|reduces your|Leverage|No fees|0.5%|Quantity/);
+ const app=trading({asks:[{price:.65,size:100}]});app.render();await settle();app.render();assert.equal(app.nodes().filter(n=>n.type==='input').length,1);assert.match(app.text(),/If Yes/);assert.match(app.text(),/Profit/);assert.doesNotMatch(app.text(),/Direction amount|reduces your|Leverage|No fees|0.5%|Quantity/);
  app.button('Advanced').props.onClick();app.render();assert.equal(app.field('Limit price per share'),undefined);app.button('Hide advanced').props.onClick();app.render();await app.submit().props.onClick();await settle();assert.equal(app.calls.find(c=>c.name==='predict').args.p_price,.65);
 });
 
-test('flattening a borrowed position shows the net refund after immediate repayment',async()=>{
- const app=trading({balance:0,positions:[{market_id:'m',side:'no',shares:100,net_cost:50}],loan:{market_id:'m',factor:5,remaining:40}});app.render();await settle();app.render();app.field('Credits to bet').props.onChange({target:{value:'50'}});app.render();assert.match(app.text(),/Total return if Yesif matched◈ 10/);assert.match(app.text(),/Returned now if matched◈ 10/);assert.match(app.text(),/Total profit\+◈ 0/);assert.equal(app.submit().props.disabled,false);
+test('a planned borrowed-position close separates realised profit, remaining shares and pending matches',async()=>{
+ const app=trading({balance:0,positions:[{market_id:'m',side:'no',shares:100,net_cost:50}],loan:{market_id:'m',factor:5,remaining:40}});app.render();await settle();app.render();app.field('Credits to bet').props.onChange({target:{value:'50'}});app.render();assert.match(app.text(),/Closes position/);assert.match(app.text(),/No shares remaining/);assert.match(app.text(),/100 wait/);assert.match(app.text(),/Cash change now◈ 0/);assert.equal(app.submit().props.disabled,false);
 });
 
 test('cancel clears an unsubmitted draft without any market mutation',async()=>{
- const app=trading();app.render();await settle();app.render();app.field('Cancel bet').props.onClick();app.render();assert.equal(app.field('Credits to bet').props.value,'');assert.equal(app.calls.some(c=>c.name==='cancel_prediction'),false);
+ const app=trading();app.render();await settle();app.render();app.field('Clear position').props.onClick();app.render();assert.equal(app.field('Credits to bet').props.value,'');assert.equal(app.calls.some(c=>c.name==='cancel_prediction'),false);
 });
 test('a placed bet needs confirmation before cancellation, including on touch/keyboard control',async()=>{
- const app=trading({model:'amm',positions:[{market_id:'m',side:'yes',shares:100,net_cost:50}]});app.props.market.q_yes=100;app.render();await settle();app.render();app.field('Cancel bet').props.onClick();app.render();assert.ok(app.button('Confirm cancellation'));assert.equal(app.calls.some(c=>c.name==='cancel_prediction'),false);await app.button('Confirm cancellation').props.onClick();await settle();const request=app.calls.find(c=>c.name==='cancel_prediction');assert.equal(request.args.p_close,true);assert.ok(request.args.p_min_return>0);assert.equal('estimate' in request.args,false);
+ const app=trading({model:'amm',positions:[{market_id:'m',side:'yes',shares:100,net_cost:50}]});app.props.market.q_yes=100;app.render();await settle();app.render();app.field('Clear position').props.onClick();app.render();assert.ok(app.button('Confirm clear'));assert.equal(app.calls.some(c=>c.name==='cancel_prediction'),false);await app.button('Confirm clear').props.onClick();await settle();const request=app.calls.find(c=>c.name==='cancel_prediction');assert.equal(request.args.p_close,true);assert.ok(request.args.p_min_return>0);assert.equal('estimate' in request.args,false);
 });
 test('pending orders can be cancelled during a timeout without closing a held bet',async()=>{
- const app=trading({orders:[{id:'o',status:'open'}],positions:[{market_id:'m',side:'yes',shares:10,net_cost:5}]});app.props.frozen=true;app.render();await settle();app.render();assert.equal(app.field('Cancel bet').props.disabled,false);app.field('Cancel bet').props.onClick();app.render();await app.button('Confirm cancellation').props.onClick();await settle();assert.equal(app.calls.find(c=>c.name==='cancel_prediction').args.p_close,false);
+ const app=trading({orders:[{id:'o',status:'open'}],positions:[{market_id:'m',side:'yes',shares:10,net_cost:5}]});app.props.frozen=true;app.render();await settle();app.render();assert.equal(app.field('Clear position').props.disabled,false);app.field('Clear position').props.onClick();app.render();await app.button('Confirm clear').props.onClick();await settle();assert.equal(app.calls.find(c=>c.name==='cancel_prediction').args.p_close,false);
+});
+
+test('clear-position confirmation uses weighted executable proceeds and a limit that covers the displayed depth',async()=>{
+ const app=trading({positions:[{market_id:'m',side:'yes',shares:100,net_cost:50}],bids:[{price:.7,size:60},{price:.5,size:40}]});app.render();await settle();app.render();assert.match(app.text(),/Close nowTotal return◈ 62/);app.field('Clear position').props.onClick();app.render();assert.match(app.text(),/Profit \/ loss\+◈ 12/);await app.button('Confirm clear').props.onClick();await settle();const r=app.calls.find(c=>c.name==='cancel_prediction');assert.equal(r.args.p_price,.4975);assert.equal('profit' in r.args,false);
 });
