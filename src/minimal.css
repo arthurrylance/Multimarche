@@ -255,3 +255,29 @@ html[data-motion=on] .game-outcome>b {animation:mm-reveal 180ms ease-out;}
 }
 .roulette-table {overflow:hidden;border-radius:50%;}
 .roulette-pointer {top:0;}
+.games-sections {display:flex;gap:4px;padding:4px;background:var(--surface-soft);border:1px solid var(--border);border-radius:8px;width:fit-content;margin-bottom:24px;}
+.games-sections button {padding:10px 18px;border-radius:5px;font-size:12px;color:var(--subtle);}
+.games-sections button[aria-pressed=true] {background:var(--text);color:var(--page);}
+.game-controls select {width:100%;padding:12px;border:1px solid var(--border);border-radius:6px;}
+.game-total-stake {font-size:12px;color:var(--subtle);margin:0 0 18px;}
+.snake-heading {display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 18px;}
+.snake-heading h2 {font-size:22px;}
+.snake-heading>span {font-size:12px;color:var(--subtle);}
+.snake-layout {display:grid;grid-template-columns:minmax(0,600px) minmax(240px,310px);gap:24px;align-items:start;}
+.snake-board {position:relative;width:100%;aspect-ratio:1;background:#000;border:1px solid #333;border-radius:10px;overflow:hidden;touch-action:none;outline-offset:4px;}
+.snake-board>svg {display:block;width:100%;height:100%;fill:#fff;}
+.snake-eyes {fill:#000;}
+html[data-motion=on] .snake-motion .snake-segment {transition:transform 140ms linear;}
+.snake-overlay {position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;background:#000b;color:#fff;pointer-events:none;}
+.snake-overlay strong {font-size:27px;font-weight:600;}
+.snake-overlay>span {font-size:12px;color:#bbb;}
+.snake-controls {margin:0;}
+.snake-score {display:flex;align-items:center;justify-content:space-between;font-size:12px;}
+.snake-score strong {font-size:32px;font-weight:600;}
+.snake-controls>p {margin-top:16px;}
+.snake-controls>small {display:block;text-align:center;font-size:10px;color:var(--subtle);}
+.snake-dpad {display:grid;grid-template-columns:repeat(3,48px);grid-template-rows:repeat(2,48px);gap:7px;justify-content:center;margin:28px 0 12px;}
+.snake-dpad button {display:grid;place-items:center;border:1px solid var(--border);border-radius:7px;background:var(--surface-soft);}
+.snake-up {grid-column:2;}.snake-left {grid-column:1;grid-row:2;}.snake-down {grid-column:2;grid-row:2;}.snake-right {grid-column:3;grid-row:2;}
+.snake-error {margin-top:20px;}.snake-error .game-actions {flex-wrap:wrap;}
+@media(max-width:700px){.snake-layout{grid-template-columns:minmax(0,1fr);gap:16px;}.snake-controls{max-width:none;width:100%;}.snake-heading>span{font-size:10px;}.snake-dpad{margin-top:18px;}}

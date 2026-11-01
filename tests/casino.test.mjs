@@ -4,7 +4,7 @@ const compiled=ts.transpileModule(readFileSync(new URL('../src/CasinoPage.tsx',i
 function casino({active=null,available=1000,remaining=100,motion=true,defer=false,fail=false}={}){
  const states=[],effects=[],pending=[],calls=[],timers=new Map();let cursor=0,tree,resume,failed=false,serial=0,snapshot={active,available,remaining,recent:[]};
  const hooks={useState:init=>{const i=cursor++;if(!(i in states))states[i]=typeof init==='function'?init():init;return[states[i],v=>states[i]=typeof v==='function'?v(states[i]):v];},useRef:init=>{const i=cursor++;return states[i]??={current:init};},useEffect:(fn,deps)=>{const i=cursor++;if(!effects[i]||deps.some((v,j)=>v!==effects[i][j])){effects[i]=deps;pending.push(fn);}}};
- const supabase={rpc:async(name,args)=>{calls.push({name,args});if(name==='casino_state')return{data:snapshot};if(name==='casino_start'){
+ const supabase={rpc:async(name,args)=>{calls.push({name,args});if(name==='casino_state')return{data:snapshot};if(name==='casino_plinko_batch'){const results=Array.from({length:args.p_count},()=>({id:`round-${++serial}`,game:'plinko',stake:args.p_stake,payout:args.p_stake*.4,version:1,status:'settled',state:{path:[1,0,1,0,1,0,1,0],slot:4,multiplier:.4,outcome:'loss'}}));snapshot={...snapshot,available:snapshot.available-args.p_stake*args.p_count,remaining:snapshot.remaining-args.p_stake*args.p_count,recent:[...results,...snapshot.recent]};return{data:results};}if(name==='casino_start'){
   if(defer)await new Promise(r=>resume=r);if(fail&&!failed){failed=true;return{error:{message:'Network retry'}};}
   const r={id:`round-${++serial}`,game:args.p_game,stake:args.p_stake,payout:0,version:1,status:args.p_game==='blackjack'?'active':'settled',state:args.p_game==='blackjack'?{player:[0,4],dealer:[36,null],player_total:13}:args.p_game==='roulette'?{number:3,choice:args.p_choice,outcome:'win'}:{path:[1,0,1,0,1,0,1,0],slot:4,multiplier:.4,outcome:'loss'}};
   snapshot={...snapshot,available:snapshot.available-args.p_stake,remaining:snapshot.remaining-args.p_stake,active:r.status==='active'?r:null,recent:r.status==='settled'?[r,...snapshot.recent]:snapshot.recent};return{data:r};
@@ -36,13 +36,13 @@ test('wheel, cards and plinko visuals map exactly to server outcomes',()=>{
  assert.equal(visuals.plinkoPath(Array(8).fill(0)).x,30);assert.equal(visuals.plinkoPath(Array(8).fill(1)).x,270);assert.throws(()=>visuals.plinkoPath([2]));const weights=[1,8,28,56,70,56,28,8,1];assert.ok(Math.abs(visuals.multipliers.reduce((sum,m,i)=>sum+m*weights[i]/256,0)-.99375)<1e-9);
 });
 
-test('plinko waits for the visible drop before revealing the result and prevents overlapping rounds',async()=>{
- const app=casino();app.render();await settle();app.render();app.button('Plinko').props.onClick();app.render();app.button('Drop').props.onClick();await settle();app.render();
- assert.match(app.text(),/Dropping…/);assert.doesNotMatch(app.text(),/Round over|loss · Stake/);assert.equal(app.button('Dropping…').props.disabled,true);
- app.button('Dropping…').props.onClick();await settle();assert.equal(app.calls.filter(c=>c.name==='casino_start').length,1);
- app.button('Blackjack').props.onClick();app.render();assert.ok(app.button('Dropping…'));
- app.finishAnimation();app.render();assert.match(app.text(),/Round over/);assert.ok(app.button('Drop'));assert.equal(app.button('Drop').props.disabled,false);
- app.button('Drop').props.onClick();await settle();app.render();assert.match(app.text(),/Dropping…/);app.props.motion=false;app.render();assert.match(app.text(),/Round over/);assert.equal(app.button('Drop').props.disabled,false);
+test('plinko batches and overlapping drops retain independent animations and respect total stake',async()=>{
+ const app=casino();app.render();await settle();app.render();app.button('Plinko').props.onClick();app.render();app.field('Plinko balls').props.onChange({target:{value:'3'}});app.render();app.button('Drop').props.onClick();await settle();app.render();
+ assert.match(app.text(),/3 balls falling/);assert.doesNotMatch(app.text(),/Round over|loss · Stake/);assert.equal(app.button('Drop').props.disabled,false);assert.equal(app.nodes().filter(n=>n.type?.name==='PlinkoBall'&&n.props.animate).length,3);
+ app.button('Drop').props.onClick();await settle();app.render();assert.match(app.text(),/6 balls falling/);assert.equal(app.calls.filter(c=>c.name==='casino_plinko_batch').length,2);assert.equal(app.nodes().filter(n=>n.type?.name==='PlinkoBall'&&n.props.animate).length,6);
+ app.button('Blackjack').props.onClick();app.render();assert.ok(app.field('Plinko balls'));
+ app.props.motion=false;app.render();assert.match(app.text(),/Round over/);assert.equal(app.button('Drop').props.disabled,false);
+ const poor=casino({available:2});poor.render();await settle();poor.render();poor.button('Plinko').props.onClick();poor.render();poor.field('Plinko balls').props.onChange({target:{value:'3'}});poor.render();assert.equal(poor.button('Drop').props.disabled,true);poor.button('Drop').props.onClick();await settle();assert.equal(poor.calls.some(c=>c.name==='casino_plinko_batch'),false);
 });
 test('plinko motion follows every selected pin and lands exactly in its server slot',()=>{
  for(let outcome=0;outcome<256;outcome++){const bits=Array.from({length:8},(_,i)=>(outcome>>i)&1);assert.deepEqual(visuals.plinkoPoint(bits,0),{x:150,y:12});assert.deepEqual(visuals.plinkoPoint(bits,1),{x:visuals.plinkoPath(bits).x,y:270});for(let step=0;step<=90;step++){const point=visuals.plinkoPoint(bits,step/90);assert.ok(point.x>=30&&point.x<=270);assert.ok(point.y>=0&&point.y<=270);}}
