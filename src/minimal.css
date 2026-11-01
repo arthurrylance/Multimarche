@@ -281,3 +281,32 @@ html[data-motion=on] .snake-motion .snake-segment {transition:transform 140ms li
 .snake-up {grid-column:2;}.snake-left {grid-column:1;grid-row:2;}.snake-down {grid-column:2;grid-row:2;}.snake-right {grid-column:3;grid-row:2;}
 .snake-error {margin-top:20px;}.snake-error .game-actions {flex-wrap:wrap;}
 @media(max-width:700px){.snake-layout{grid-template-columns:minmax(0,1fr);gap:16px;}.snake-controls{max-width:none;width:100%;}.snake-heading>span{font-size:10px;}.snake-dpad{margin-top:18px;}}
+/* Shared game frame: switching sections preserves both geometry and game state. */
+.games-page {max-width:934px;}
+.games-page .page-heading {min-height:82px;}
+.game-wallet {min-width:130px;font-variant-numeric:tabular-nums;}
+.games-sections {width:100%;gap:26px;padding:0;margin:0 0 22px;border:0;border-bottom:1px solid var(--border);border-radius:0;background:none;}
+.games-sections button {position:relative;min-height:46px;padding:12px 0;border-radius:0;font-size:13px;font-weight:550;white-space:nowrap;}
+.games-sections button[aria-selected=true] {background:none;color:var(--text);}
+.games-sections button:after {content:'';position:absolute;bottom:-1px;left:0;right:0;height:2px;background:var(--text);transform:scaleX(0);transform-origin:center;}
+.games-sections button[aria-selected=true]:after {transform:scaleX(1);}
+html[data-motion=on] .games-sections button:after {transition:transform 150ms ease-out;}
+.games-stage {display:grid;align-items:start;}
+.game-section {grid-area:1/1;min-width:0;opacity:1;visibility:visible;}
+.game-section[aria-hidden=true] {opacity:0;visibility:hidden;pointer-events:none;}
+html[data-motion=on] .game-section {transition:opacity 140ms ease-out;}
+.games-page :is(.game-layout,.snake-layout) {grid-template-columns:minmax(0,600px) minmax(240px,310px);gap:24px;}
+.games-page :is(.game-table,.snake-board) {width:100%;aspect-ratio:1;min-height:420px;}
+.games-page :is(.game-tabs,.snake-heading) {min-height:44px;margin:0 0 22px;align-items:center;}
+.games-page .game-tabs button {min-height:44px;}
+.snake-heading h2 {font-size:14px;font-weight:600;}
+.snake-heading>span {font-size:11px;font-variant-numeric:tabular-nums;}
+.games-page :is(.game-controls,.snake-controls) {min-height:380px;}
+.game-controls .game-budget {font-size:11px;color:var(--subtle);margin:-10px 0 20px;}
+@media(max-width:700px){
+ .games-page :is(.game-layout,.snake-layout) {grid-template-columns:minmax(0,1fr);gap:16px;}
+ .games-page :is(.game-table,.snake-board) {min-height:360px;}
+ .games-page :is(.game-controls,.snake-controls) {padding:20px;min-height:365px;}
+ .games-sections {gap:22px;}
+ .game-wallet {min-width:110px;}
+}

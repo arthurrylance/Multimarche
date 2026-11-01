@@ -17,3 +17,9 @@ test('Snake keeps local movement smooth during a save and advances the expected 
 test('Snake flushes short movement batches when leaving and reloading uses authoritative state',async()=>{
  const srv=server(),client=new SnakeTransport(srv.rpc,()=>{},()=>{},()=>{});await client.load();await client.start();client.move(0);client.dispose();await settle();assert.equal(client.data.session.state.steps,1);await client.load();assert.equal(client.queue.length,0);assert.equal(client.state.steps,1);
 });
+
+test('continuous Snake artwork stays connected around corners and preserves the tail when growing',async()=>{
+ const {snakeFrame}=await import('../src/snake-art.mjs');const previous=[42,41,21,20],next=[62,42,41,21];
+ for(const progress of [0,.1,.5,.9,1]){const frame=snakeFrame(previous,next,progress),points=[...frame.d.matchAll(/[ML]([\d.]+) ([\d.]+)/g)].map(m=>[Number(m[1]),Number(m[2])]);for(let i=1;i<points.length;i++)assert.ok(points[i][0]===points[i-1][0]||points[i][1]===points[i-1][1]);}
+ assert.deepEqual(snakeFrame(previous,next,0).head,{x:50,y:50});assert.deepEqual(snakeFrame(previous,next,1).head,{x:50,y:70});assert.match(snakeFrame(previous,[62,...previous],.5).d,/L10 30$/);assert.deepEqual(snakeFrame(previous,[210,209,208],0).head,{x:210,y:210});
+});
