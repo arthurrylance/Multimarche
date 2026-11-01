@@ -122,3 +122,18 @@ html[data-theme] .trade-summary .positive {color:#247345!important;}
 html[data-theme] .trade-summary .negative {color:#b54b4b!important;}
 html[data-theme=dark] .trade-summary .positive {color:#8fd3a9!important;}
 html[data-theme=dark] .trade-summary .negative {color:#ed9999!important;}
+.clean-bet-panel .bet-panel-title {font-size:15px;margin-bottom:18px;}
+.clean-bet-panel .bet-amount-heading {display:flex;justify-content:space-between;gap:8px;font-size:11px;font-weight:600;}
+.clean-bet-panel .bet-amount-heading small {font-weight:400;font-size:10px;}
+.clean-bet-panel .simple-bet-summary {margin:20px 0;}
+.clean-bet-panel .simple-bet-summary .potential {border-top:1px solid var(--border);padding-top:18px;margin-top:14px;}
+.clean-bet-panel .simple-bet-summary .potential strong {font-size:27px;}
+.clean-bet-panel .simple-bet-summary small {display:block;font-size:9px;margin-top:4px;color:var(--subtle);}
+.advanced-bet-toggle {display:flex;align-items:center;justify-content:space-between;width:100%;padding:17px 0 0;color:var(--subtle);font-size:11px;}
+.advanced-bet-toggle:hover {color:var(--text);}
+.advanced-bet-options {border-top:1px solid var(--border);margin-top:16px;padding-top:6px;}
+.advanced-bet-options .tiny {font-size:10px;line-height:1.7;margin:12px 0;}
+.advanced-bet-options .trade-summary {margin:18px 0;}
+.advanced-bet-options .net-position strong {font-size:16px;}
+.compact-book,.pending-bet-details {margin-top:18px;font-size:11px;}
+.compact-book>summary,.pending-bet-details>summary {cursor:pointer;color:var(--subtle);padding:6px 0;}

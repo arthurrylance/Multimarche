@@ -8,3 +8,12 @@ test('ledger rejects tampering, gaps and unfunded transfers even if rehashed',as
  await assert.rejects(()=>verifyLedger(chain([genesis,{kind:'transfer',from:'treasury',to:'user',amount:'1001'}])));
  await assert.rejects(()=>verifyLedger(chain([{...genesis,total_supply:'1001'}])));
 });
+test('recorded borrowing can be repaid into a negative balance without issuing credits',async()=>{
+ const blocks=chain([genesis,{kind:'transfer',from:'treasury',to:'user',amount:'10'},
+ {kind:'transfer',from:'treasury',to:'user',amount:'90',reason:'Leverage borrowing'},
+ {kind:'transfer',from:'user',to:'market',amount:'100'},
+ {kind:'transfer',from:'user',to:'treasury',amount:'90',reason:'Leverage repayment'}]);
+ const result=await verifyLedger(blocks);assert.equal(result.balances.get('user'),-90n*10n**80n);assert.equal(result.supply,1000n*10n**80n);
+ const forged=chain([genesis,{kind:'transfer',from:'user',to:'treasury',amount:'90',reason:'Leverage repayment'}]);await assert.rejects(()=>verifyLedger(forged));
+ await assert.rejects(()=>verifyLedger(chain([genesis,{kind:'transfer',from:'treasury',to:'user',amount:'90',reason:'Leverage borrowing'},{kind:'transfer',from:'user',to:'other',amount:'100',reason:'Leverage repayment'}])));
+});
