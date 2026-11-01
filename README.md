@@ -40,7 +40,7 @@ Normal results require the market’s selected confirmation count (at least two 
 
 ## Matched order book
 
-At creation, choose **AMM — Automatic market maker** (the default for quick/small-group bets) or **CLOB — Order book** (matched member orders for longer bets). The model stays fixed for that market. Existing markets and positions are not converted. Both systems use the same Buy/Sell interface. Existing AMM markets retain their positions, prices and settlement; their trading panel is marked **AMM · Instant**. The creation UI uses `create_market_v7` / `create_market_group_v2` with an explicit execution model. Earlier public creation API versions still create order-book markets for compatibility. There is no price-sensitivity setting on new markets.
+At creation, choose **AMM — Automatic market maker** (the default for quick/small-group bets) or **CLOB — Order book** (matched member orders for longer bets). The model stays fixed for that market. Existing markets and positions are not converted. Both systems use the same Buy/Sell interface. Existing AMM markets retain their positions, prices and settlement. The creation UI uses `create_market_v7` / `create_market_group_v2` with an explicit execution model. Earlier public creation API versions still create order-book markets for compatibility. There is no price-sensitivity setting on new markets.
 
 The trading ticket separates **Buy / Sell** from **Yes / No**. Buying one outcome never sells or changes the other outcome. Selling only uses that outcome’s available shares. Positions show weighted purchase cost, marked value and unrealised P/L; marked value is an estimate, not a guaranteed sale price. Settlement and executable cash-out estimates remain available under the positions table.
 

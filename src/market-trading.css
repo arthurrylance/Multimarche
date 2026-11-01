@@ -7,7 +7,6 @@
 .market-action-tabs button.active{color:var(--text);border-bottom-color:var(--text)}
 .market-trading .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 .market-order-type select{width:auto;max-width:115px;border:0;background:transparent!important;font:inherit;font-size:12px;font-weight:600;padding:8px 20px 8px 6px;margin-bottom:12px;cursor:pointer}
-.execution-tag{font-size:10px;color:var(--subtle);padding:6px 8px;background:var(--surface-soft);border-radius:5px;margin-bottom:12px;white-space:nowrap}
 .market-outcome-picker{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .market-outcome-picker .market-outcome{min-height:58px;display:flex;align-items:center;justify-content:space-between;gap:8px;border:1px solid var(--border);border-radius:8px;padding:14px 13px;background:var(--surface-soft);font-size:15px;color:var(--subtle)}
 .market-outcome b{font-size:13px;font-variant-numeric:tabular-nums;white-space:nowrap}
