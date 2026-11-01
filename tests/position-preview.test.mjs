@@ -22,3 +22,26 @@ test('order-book previews distinguish immediate matches, reserves and hypothetic
 test('automatic direction changes conserve combined realised and future profit at different initial likelihoods',()=>{
  for(const prior of [.1,.5,.9])for(const held of [-100,0,100])for(const side of ['yes','no'])for(const quantity of [10,100,150]){const m={...amm,initial_probability:prior,q_yes:Math.max(held,0),q_no:Math.max(-held,0)},basis=Math.abs(held)*.4,p=projectPosition({market:m,held,basis,side,quantity}),legacy=netPreview(held,basis,side,quantity,quote(m,side,'buy',quantity));near(p.cash,legacy.cash);near(p.yes.profit+p.realised,legacy.yes);near(p.no.profit+p.realised,legacy.no);}
 });
+
+import {portfolioPosition,projectTrade} from '../src/position-preview.mjs';
+test('independent buys preserve both holdings and combine outcome costs',()=>{
+ const p=projectTrade({market:book,yes:100,no:30,basisYes:40,basisNo:12,side:'no',action:'buy',quantity:20,limit:.4,levels:[{price:.4,size:20}]});near(p.yesShares,100);near(p.noShares,50);near(p.basis,60);near(p.cash,-8);near(p.realised,0);near(p.yes.profit,40);near(p.no.profit,-10);
+});
+test('explicit sales allocate only the chosen side basis and retain debt until both sides are flat',()=>{
+ const p=projectTrade({market:book,yes:100,no:30,basisYes:40,basisNo:12,debt:20,side:'yes',action:'sell',quantity:100,limit:.5,levels:[{price:.6,size:100}]});near(p.cash,60);near(p.realised,20);near(p.noShares,30);near(p.debt,20);near(p.basis,12);near(p.no.return,10);
+ const flat=projectTrade({market:book,no:30,basisNo:12,debt:20,side:'no',action:'sell',quantity:30,limit:.5,levels:[{price:.6,size:30}]});near(flat.cash,-2);near(flat.debt,0);near(flat.realised,6);
+ const pending=projectTrade({market:book,no:30,basisNo:12,debt:20,side:'no',action:'sell',quantity:30,limit:.5,levels:[{price:.6,size:30}],hasPending:true});near(pending.cash,18);near(pending.debt,20);
+});
+test('separate holdings have exact combined AMM exit value and unavailable book liquidity is honest',()=>{
+ const p=portfolioPosition({market:amm,yes:100,no:100,basisYes:40,basisNo:45,debt:20});near(p.now.return,80);near(p.now.profit,15);near(p.yes.return,80);near(p.no.profit,15);
+ const illiquid=portfolioPosition({market:book,yes:100,no:20,basisYes:40,basisNo:8,bidsYes:[{price:.7,size:100}],bidsNo:[{price:.4,size:10}]});assert.equal(illiquid.now.return,null);near(illiquid.yes.profit,52);
+});
+test('explicit FAK and FOK previews use actual matches; pending sells reserve shares without returning cash early',()=>{
+ const input={market:book,yes:100,no:10,basisYes:40,basisNo:5,side:'yes',action:'sell',quantity:100,limit:.5,levels:[{price:.6,size:20}]};
+ const gtc=projectTrade(input);near(gtc.cash,12);near(gtc.realised,4);near(gtc.pending,80);near(gtc.reserved,0);near(gtc.yesShares,0);near(gtc.noShares,10);
+ const fak=projectTrade({...input,tif:'FAK'});near(fak.yesShares,80);near(fak.basis,37);near(fak.pending,0);
+ const fok=projectTrade({...input,tif:'FOK'});near(fok.yesShares,100);near(fok.cash,0);near(fok.basis,45);assert.equal(fok.failed,true);
+});
+test('explicit credit reservations and borrowing never count as trading profit',()=>{
+ const p=projectTrade({market:book,side:'yes',action:'buy',quantity:200,limit:.5,levels:[{price:.4,size:20}],draw:90});near(p.cash,82);near(p.availableCash,-8);near(p.reserved,90);near(p.realised,0);near(p.basis,98);near(p.yes.return,110);near(p.yes.profit,102);
+});
