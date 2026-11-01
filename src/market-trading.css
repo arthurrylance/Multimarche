@@ -1,0 +1,94 @@
+/* Scoped to market creation and the market trading sidebar. */
+.market-trading.trade-panel{padding:0;display:block;overflow:hidden;border-radius:14px;box-shadow:0 4px 20px #00000006}
+.market-trading .market-ticket{padding:22px}
+.market-ticket-heading{display:flex;align-items:center;justify-content:space-between;gap:15px;border-bottom:1px solid var(--border);margin-bottom:20px}
+.market-action-tabs{display:flex;gap:24px}
+.market-action-tabs button{min-height:48px;padding:0 0 13px;font-size:17px;font-weight:600;color:var(--subtle);border-bottom:2px solid transparent;margin-bottom:-1px}
+.market-action-tabs button.active{color:var(--text);border-bottom-color:var(--text)}
+.market-trading .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.market-order-type select{width:auto;max-width:115px;border:0;background:transparent!important;font:inherit;font-size:12px;font-weight:600;padding:8px 20px 8px 6px;margin-bottom:12px;cursor:pointer}
+.execution-tag{font-size:10px;color:var(--subtle);padding:6px 8px;background:var(--surface-soft);border-radius:5px;margin-bottom:12px;white-space:nowrap}
+.market-outcome-picker{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.market-outcome-picker .market-outcome{min-height:58px;display:flex;align-items:center;justify-content:space-between;gap:8px;border:1px solid var(--border);border-radius:8px;padding:14px 13px;background:var(--surface-soft);font-size:15px;color:var(--subtle)}
+.market-outcome b{font-size:13px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.market-outcome-picker .market-outcome.selected.yes{background:#eaf7ef;color:#226844;border-color:#82b89a}
+.market-outcome-picker .market-outcome.selected.no{background:#fdeff1;color:#aa354c;border-color:#d69aaa}
+html[data-theme=dark] .market-outcome-picker .market-outcome.selected.yes{background:#10271a;color:#a7dfbc;border-color:#416b50}
+html[data-theme=dark] .market-outcome-picker .market-outcome.selected.no{background:#2b141a;color:#edafbb;border-color:#784251}
+.market-trade-hint{font-size:11px;color:var(--subtle);line-height:1.65;margin:12px 0 24px}
+.market-amount-label{display:block;margin:0}
+.market-amount-label>span{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:13px;font-weight:600}
+.market-amount-label>span small{font-size:10px;color:var(--subtle);font-weight:400;text-align:right}
+.market-amount-label>div{display:flex;align-items:center;gap:9px;border:1px solid var(--border);border-radius:9px;padding:14px;margin-top:10px}
+.market-amount-label>div:focus-within{outline:2px solid var(--subtle);outline-offset:2px}
+.market-amount-label>div>span{font-size:17px;color:var(--subtle)}
+.market-amount-label input{min-width:0;width:100%;border:0;padding:0;outline:none!important;box-shadow:none;background:transparent!important;font-size:30px;font-weight:600;line-height:1.2;font-variant-numeric:tabular-nums}
+.market-amount-label input::-webkit-inner-spin-button,.market-amount-label input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.market-amount-label input{appearance:textfield;-moz-appearance:textfield}
+.market-amount-presets{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin:10px 0 22px}
+.market-amount-presets button{min-height:34px;border:1px solid var(--border);border-radius:6px;font-size:11px;font-weight:500;background:var(--surface)}
+.market-amount-presets button:hover:not(:disabled){background:var(--surface-soft);border-color:var(--subtle)}
+.market-limit-price{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12px;margin:0 0 20px}
+.market-limit-price>span{display:flex;align-items:center;gap:5px;border:1px solid var(--border);border-radius:6px;padding:9px;color:var(--subtle);max-width:170px}
+.market-limit-price input{min-width:0;width:78px;border:0;padding:0;outline-offset:5px;background:transparent!important;text-align:right;font-weight:600;font-size:14px}
+.market-limit-price small{font-size:10px;white-space:nowrap}
+.market-trade-estimate{margin:20px 0}
+.market-trade-estimate dl{display:grid;gap:12px;margin:0 0 18px}
+.market-trade-estimate dl>div{display:flex;align-items:baseline;justify-content:space-between;gap:15px;font-size:12px}
+.market-trade-estimate dt{color:var(--subtle)}
+.market-trade-estimate dd{margin:0;text-align:right;font-weight:600;font-variant-numeric:tabular-nums}
+.market-payout{display:flex;align-items:center;justify-content:space-between;gap:10px;border-top:1px solid var(--border);padding-top:18px}
+.market-payout>span{font-size:12px;font-weight:600}
+.market-payout small{display:block;font-size:10px;font-weight:400;color:var(--subtle);margin-top:5px}
+.market-payout strong{font-size:27px;letter-spacing:-.7px;font-variant-numeric:tabular-nums}
+.market-profit{text-align:right;font-size:10px;color:var(--subtle);margin:8px 0 0}
+.market-profit b{color:var(--text);font-weight:600}
+.market-estimate-note,.market-valuation-note{font-size:10px;color:var(--subtle);line-height:1.7;margin:14px 0 0}
+.market-projection-details{margin-top:15px}
+.market-projection-details>summary,.market-trade-settings>summary,.position-settlement>summary{font-size:11px;color:var(--subtle);cursor:pointer;min-height:32px;align-content:center}
+.market-projection-details .prediction-preview{margin-top:10px}
+.market-trading .market-trade-submit{min-height:48px;border-radius:8px;font-size:15px;font-weight:600;margin-top:2px}
+.market-trading .market-trade-submit:disabled{opacity:.5;cursor:not-allowed}
+.market-ticket-foot{text-align:center;font-size:9px;color:var(--subtle);margin:12px 0 8px;line-height:1.6}
+.market-trade-settings{margin:8px 0 -6px;border-top:1px solid var(--border);padding-top:7px}
+.market-trade-settings .advanced-bet-options{margin:10px 0;border:0;padding:0}
+.market-trade-settings .advanced-bet-options>label{font-size:11px}
+.market-liquidity-note{border:1px solid var(--border);background:var(--surface-soft);padding:13px;border-radius:7px;font-size:11px;line-height:1.8;margin:0 0 18px;color:var(--subtle)}
+.market-liquidity-note button{font:inherit;text-decoration:underline;font-weight:600;color:var(--text)}
+.market-positions,.market-orderbook,.market-pending-orders{border-top:1px solid var(--border);padding:20px 22px}
+.market-trading .market-section-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 16px}
+.market-trading .market-section-heading h3{font-size:13px;margin:0}
+.market-trading .market-section-heading>span{font-size:9px;color:var(--subtle)}
+.market-empty-position{font-size:11px;line-height:1.8;color:var(--subtle);margin:0}
+.market-position-labels,.market-position-row{display:grid;grid-template-columns:1.3fr 1fr 1fr 40px;align-items:center;gap:8px;font-size:10px}
+.market-position-labels{font-size:8px;color:var(--subtle);padding-bottom:8px}
+.market-position-labels>span:nth-child(2),.market-position-labels>span:nth-child(3),.market-position-row>div:nth-child(2),.market-position-row>div:nth-child(3){text-align:right}
+.market-position-row{padding:12px 0;border-top:1px solid var(--border);font-variant-numeric:tabular-nums}
+.market-position-row>div{min-width:0}
+.market-position-row b{font-size:10px;font-weight:600;display:inline-block}
+.market-position-row small{display:block;font-size:9px;line-height:1.5;margin-top:5px;color:var(--subtle);overflow-wrap:anywhere}
+.market-position-row .outcome-chip{font-size:11px;padding:3px 8px;border-radius:4px;background:var(--surface-soft)}
+.market-position-row .outcome-chip.yes{color:#247345;background:#eaf7ef}
+.market-position-row .outcome-chip.no{color:#b43f52;background:#fdeff1}
+html[data-theme=dark] .market-position-row .outcome-chip.yes{color:#a7dfbc;background:#10271a}
+html[data-theme=dark] .market-position-row .outcome-chip.no{color:#edafbb;background:#2b141a}
+.position-sell{width:100%;min-height:34px;border:1px solid var(--border);border-radius:5px;font-size:10px;font-weight:600}
+.position-sell:hover:not(:disabled){border-color:var(--subtle);background:var(--surface-soft)}
+.position-settlement{margin:10px 0 0}
+.market-orderbook>summary,.market-pending-orders>summary{font-size:12px;font-weight:600;cursor:pointer;min-height:24px;align-content:center}
+.market-orderbook>summary>span,.market-pending-orders>summary>span{float:right;color:var(--subtle);font-size:11px;font-weight:400}
+.market-orderbook .book-depth{margin-top:16px}
+.market-orderbook .book-depth button{width:100%;display:flex;justify-content:space-between;padding:8px 0;font-size:11px}
+.market-pending-orders .market-open-orders{margin:12px 0 0}
+.market-pending-orders .market-open-orders>.text-button{font-size:10px;margin-bottom:10px;text-decoration:underline}
+.market-execution-picker .market-execution-options{display:grid;gap:9px}
+.market-execution-options>button{border:1px solid var(--border);border-radius:8px;padding:14px;text-align:left;background:var(--surface)}
+.market-execution-options>button[aria-pressed=true]{border-color:var(--text);box-shadow:inset 0 0 0 1px var(--text);background:var(--surface-soft)}
+.market-execution-options>button>span{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px}
+.market-execution-options b{font-size:12px;letter-spacing:.8px}
+.market-execution-options i{font-size:15px;font-style:normal}
+.market-execution-options strong{display:block;font-size:12px;font-weight:500;margin-bottom:7px}
+.market-execution-options small{display:block;font-size:10px;color:var(--subtle);line-height:1.7}
+.execution-choice-note{font-size:10px;line-height:1.7;color:var(--subtle);margin:12px 0 0}
+@media(min-width:1001px){.detail-layout:has(>.market-trading){grid-template-columns:minmax(0,1fr) 360px}}
+@media(max-width:600px){.market-trading .market-ticket{padding:20px}.market-positions,.market-orderbook,.market-pending-orders{padding:18px 20px}.market-action-tabs button{font-size:17px}.market-outcome-picker .market-outcome{font-size:15px}.market-amount-presets button{font-size:12px}.market-position-labels{font-size:9px}.market-position-row b{font-size:11px}.market-position-row small{font-size:10px}}

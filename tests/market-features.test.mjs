@@ -15,10 +15,10 @@ function mount(file,props,{exportName='default',rpc=async()=>({data:'proposed'})
  return {calls,props,render(){cursor=0;tree=module.exports[exportName](props);for(const e of pending.splice(0))e();},nodes:()=>walk(tree),text:()=>text(tree),button:label=>walk(tree).find(n=>n.type==='button'&&(text(n)===label||n.props['aria-label']===label)),form:()=>walk(tree).find(n=>n.type==='form')};
 }
 test('creation defaults to Automatic and sends the selected model with the existing rules and deadline',async()=>{
- const done=[],app=mount('App.tsx',{done:id=>done.push(id)},{exportName:'CreateForm',rpc:async()=>({data:'created'})});app.render();assert.equal(app.button('Automatic').props['aria-pressed'],true);
+ const done=[],app=mount('App.tsx',{done:id=>done.push(id)},{exportName:'CreateForm',rpc:async()=>({data:'created'})});app.render();assert.equal(app.button('AMM — Automatic market maker').props['aria-pressed'],true);
  app.nodes().find(n=>n.props['aria-label']==='Starting likelihood of Yes').props.onChange({target:{value:'15'}});app.render();
  const data={title:'Question?',yes:'Happens',no:'Does not',verifications:'3'};await app.form().props.onSubmit({preventDefault(){},currentTarget:data});assert.equal(app.calls[0].name,'create_market_v7');assert.equal(app.calls[0].args.p_execution,'amm');assert.equal(app.calls[0].args.p_probability,.15);assert.equal(app.calls[0].args.p_verifications,3);assert.ok(Date.parse(app.calls[0].args.p_closes)>Date.now());
- app.button('Order book').props.onClick();app.render();await app.form().props.onSubmit({preventDefault(){},currentTarget:data});assert.equal(app.calls[1].args.p_execution,'clob');assert.equal(done.length,2);
+ app.button('CLOB — Order book').props.onClick();app.render();await app.form().props.onSubmit({preventDefault(){},currentTarget:data});assert.equal(app.calls[1].args.p_execution,'clob');assert.equal(done.length,2);
 });
 const market={id:'m',status:'proposed',outcome:'yes',required_verifications:2},vote={market_id:'m',user_id:'a',outcome:'yes',evidence:'Observed'};
 function resolution(props={},rpc){const messages=[];const app=mount('ResolutionPanel.tsx',{market:{...market},votes:[vote],userId:'b',admin:false,frozen:false,name:id=>id,refresh(){},notify:s=>messages.push(s),...props},{rpc});return{app,messages};}
