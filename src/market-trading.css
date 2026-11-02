@@ -91,3 +91,28 @@ html[data-theme=dark] .market-position-row .outcome-chip.no{color:#edafbb;backgr
 .execution-choice-note{font-size:10px;line-height:1.7;color:var(--subtle);margin:12px 0 0}
 @media(min-width:1001px){.detail-layout:has(>.market-trading){grid-template-columns:minmax(0,1fr) 360px}}
 @media(max-width:600px){.market-trading .market-ticket{padding:20px}.market-positions,.market-orderbook,.market-pending-orders{padding:18px 20px}.market-action-tabs button{font-size:17px}.market-outcome-picker .market-outcome{font-size:15px}.market-amount-presets button{font-size:12px}.market-position-labels{font-size:9px}.market-position-row b{font-size:11px}.market-position-row small{font-size:10px}}
+.market-sell-duration{margin:-5px 0 22px}
+.local-date-time{display:grid;grid-template-columns:minmax(0,1fr) minmax(90px,.7fr);gap:10px}
+.local-date-time>label{min-width:0;margin:8px 0 0;display:grid;gap:6px;font-size:11px}
+.local-date-time input{width:100%;min-width:0;padding:10px;font-size:12px}
+.date-time-field{display:grid;gap:6px;font-size:12px;margin:14px 0}
+.date-time-field>small{font-size:10px;color:var(--subtle)}
+.trade-review-question{font-size:14px;font-weight:500;line-height:1.7;overflow-wrap:anywhere;margin:18px 0 24px}
+.trade-review-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-bottom:18px;border-bottom:1px solid var(--border)}
+.trade-review-heading>strong{font-size:20px;font-weight:600}
+.trade-review-heading .outcome-chip{display:inline-block;padding:4px 10px;border-radius:5px;font-size:15px;background:var(--surface-soft)}
+.trade-review-heading>span{font-size:11px;color:var(--subtle)}
+.trade-review-facts{display:grid;gap:15px;margin:22px 0}
+.trade-review-facts>div{display:flex;justify-content:space-between;align-items:baseline;gap:16px;font-size:12px}
+.trade-review-facts dt{color:var(--subtle)}
+.trade-review-facts dd{margin:0;text-align:right;font-weight:600;font-variant-numeric:tabular-nums}
+.trade-review-result{display:flex;align-items:center;justify-content:space-between;gap:16px;border-top:1px solid var(--border);padding-top:20px}
+.trade-review-result>span{font-size:12px;font-weight:600}
+.trade-review-result small{display:block;font-size:10px;font-weight:400;color:var(--subtle);margin-top:6px}
+.trade-review-result strong{font-size:28px;letter-spacing:-.5px;white-space:nowrap}
+.trade-review-note,.trade-review-warning{font-size:11px;line-height:1.8;color:var(--subtle);margin:16px 0 0}
+.trade-review-warning{padding:12px;background:var(--surface-soft);border:1px solid var(--border);border-radius:6px;color:var(--text)}
+.trade-confirmation .confirm-actions{display:grid;grid-template-columns:1fr 1fr;margin-top:24px}
+.trade-confirmation .confirm-actions>button{justify-content:center;min-height:44px}
+.ending-custom>div{grid-template-columns:minmax(0,1fr)}
+.ending-custom>div>label{max-width:160px}
