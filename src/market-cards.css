@@ -20,12 +20,14 @@
 .market-grid .card-prob strong{font-size:32px;line-height:1;white-space:nowrap}
 .market-grid .card-prob strong>span{font-size:24px}
 .market-grid .card-prob .chance-label{font-size:9px;line-height:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.market-grid .market-option-picker{position:relative;flex:1;max-width:70%;min-width:0}
-.market-grid .market-option-picker select{appearance:none;-webkit-appearance:none;width:100%;min-width:0;border:0;border-bottom:1px solid var(--border);border-radius:0;background:transparent;color:var(--text);font-size:11px;font-weight:500;line-height:18px;padding:6px 20px 6px 0;text-align:right;text-overflow:ellipsis;cursor:pointer}
-.market-grid .market-option-picker select:hover{border-color:var(--text)}
-.market-grid .market-option-picker select:focus-visible{outline:2px solid var(--text);outline-offset:3px}
-.market-grid .market-option-picker option{background:var(--surface);color:var(--text);text-align:left}
-.market-grid .market-option-picker svg{position:absolute;right:0;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--subtle)}
+.prediction-select{position:relative;min-width:0}
+.market-grid .prediction-select{flex:1;max-width:70%}
+.prediction-select select{appearance:none;-webkit-appearance:none;width:100%;min-width:0;border:0;border-radius:0;background:transparent;color:var(--text);font-size:11px;font-weight:500;line-height:18px;padding:6px 20px 6px 0;text-align:left;text-overflow:ellipsis;cursor:pointer}
+.market-grid .prediction-select select{text-align:right}
+.holding-selector .prediction-select select{font-size:10px}
+.prediction-select select:focus-visible{outline:2px solid var(--text);outline-offset:-2px}
+.prediction-select option{background:var(--surface);color:var(--text);text-align:left}
+.prediction-select svg{position:absolute;right:0;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--subtle)}
 .market-grid .card-context{height:14px;display:flex;align-items:center;justify-content:space-between;gap:8px;overflow:hidden;font-size:9px;color:var(--subtle)}
 .market-grid .card-context>span,.market-grid .card-context .counter-chip{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:9px;margin:0;display:block}
 .market-grid .card-body .outcomes{height:32px;margin:0;gap:8px;align-items:stretch}
@@ -44,7 +46,7 @@
  .market-grid .card-body .card-prob{height:46px;gap:6px}
  .market-grid .card-prob strong{font-size:28px}
  .market-grid .card-prob strong>span{font-size:21px}
- .market-grid .market-option-picker select{font-size:10px}
+ .prediction-select select{font-size:10px}
  .market-grid .card-body .outcomes{height:32px;gap:5px}
  .market-grid .outcomes>button{padding:0 6px;font-size:10px}
  .market-grid .outcomes>button>span{font-size:8px}

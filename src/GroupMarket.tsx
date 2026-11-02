@@ -1,6 +1,7 @@
 import {formatDateTime} from './display-format.mjs';
 import {useState} from 'react';
-import {Star,ArrowLeft,ArrowUpRight,ChevronDown} from 'lucide-react';
+import PredictionSelect from './PredictionSelect';
+import {Star,ArrowLeft,ArrowUpRight} from 'lucide-react';
 import type {Market} from './types';
 import type {MarketListing} from './market-groups.mjs';
 const fmt=(n:number,d=0)=>Number(n).toLocaleString(undefined,{maximumFractionDigits:d});
@@ -14,7 +15,7 @@ export function GroupMarketCard({listing:g,open,watched,watch}:{listing:MarketLi
   <div className="card-top"><button className="market-title" title={g.title} onClick={()=>open(m.id)}>{g.title}</button><button className={`watch-button ${watched.includes(m.id)?'watched':''}`} aria-label={`${watched.includes(m.id)?'Unstar':'Star'} ${m.option_label||m.title}`} onClick={()=>watch(m.id)}><Star size={16} fill={watched.includes(m.id)?'currentColor':'none'}/></button></div>
   <div className="card-options" aria-hidden="true"/>
   <div className="card-body" id={`${panel}-panel`}>
-   <div className="card-prob"><div><strong className={m.status==='resolved'?(m.outcome==='yes'?'positive':m.outcome==='no'?'negative':''):''}>{m.status==='resolved'?m.outcome?.toUpperCase():<>{fmt(m.probability*100)}<span>%</span></>}</strong><span className="chance-label">{m.status==='resolved'?'Result':m.execution_model==='clob'?(m.price_available===false?'Starting estimate':'Yes price'):'chance'}</span></div><div className="market-option-picker"><select aria-label={`Predictions in ${g.title}`} aria-controls={`${panel}-panel`} title={m.option_label||m.title} value={m.id} onChange={e=>setSelected(e.target.value)}>{g.markets.map(option=><option key={option.id} value={option.id}>{option.option_label||option.title} · {price(option)}</option>)}</select><ChevronDown size={14} aria-hidden="true"/></div></div>
+   <div className="card-prob"><div><strong className={m.status==='resolved'?(m.outcome==='yes'?'positive':m.outcome==='no'?'negative':''):''}>{m.status==='resolved'?m.outcome?.toUpperCase():<>{fmt(m.probability*100)}<span>%</span></>}</strong><span className="chance-label">{m.status==='resolved'?'Result':m.execution_model==='clob'?(m.price_available===false?'Starting estimate':'Yes price'):'chance'}</span></div><PredictionSelect label={`Predictions in ${g.title}`} controls={`${panel}-panel`} value={m.id} onChange={setSelected} options={g.markets.map(option=>({id:option.id,label:option.option_label||option.title,detail:price(option)}))}/></div>
    <div className="card-context"><span title="Independent options · more than one can happen">{g.markets.length} independent options</span><span title={m.counter_enabled?`${m.counter_label||'Count'}: ${fmt(m.counter_value??0)}${status(m)?' · '+status(m):''}`:status(m)}>{m.counter_enabled?`${m.counter_label||'Count'}: ${fmt(m.counter_value??0)}${status(m)?' · '+status(m):''}`:status(m)}</span></div>
    <div className={`outcomes ${m.status==='resolved'?'resolved-outcomes':''}`}>{m.status==='resolved'?<button className="secondary" onClick={()=>open(m.id)}>View result</button>:<><button className="yes-button" onClick={()=>open(m.id,'yes')}>Yes <span>{m.price_available===false?'Place order':sharePrice(m.probability)}<ArrowUpRight size={13}/></span></button><button className="no-button" onClick={()=>open(m.id,'no')}>No <span>{m.price_available===false?'Place order':sharePrice(1-m.probability)}<ArrowUpRight size={13}/></span></button></>}</div>
   </div>
