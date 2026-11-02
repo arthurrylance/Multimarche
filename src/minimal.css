@@ -234,7 +234,7 @@ html[data-motion=off],html[data-motion=off] *,html[data-motion=off] *:before,htm
 .game-history small {display:block;color:var(--subtle);font-size:10px;margin-top:5px;}
 .footer-help[aria-current=page] {color:var(--text);}
 @keyframes mm-wheel {from{transform:rotate(0)}to{transform:rotate(var(--wheel-turn))}}
-html[data-motion=on] .roulette-wheel.has-result {animation:mm-wheel 1.25s cubic-bezier(.12,.65,.15,1);}
+html[data-motion=on] .roulette-wheel.has-result {animation:mm-wheel var(--roulette-duration,1250ms) cubic-bezier(.12,.65,.15,1);}
 html[data-motion=on] .playing-card {animation:mm-dialog 160ms ease-out;}
 html[data-motion=on] .game-outcome>b {animation:mm-reveal 180ms ease-out;}
 @media(max-width:800px) {

@@ -6,6 +6,7 @@ export function wheelRotation(number){const index=wheel.indexOf(number);return i
 export function wheelWedge(index){const a=(index-.5)*2*Math.PI/37-Math.PI/2,b=(index+.5)*2*Math.PI/37-Math.PI/2;return `M150 150L${150+138*Math.cos(a)} ${150+138*Math.sin(a)}A138 138 0 0 1 ${150+138*Math.cos(b)} ${150+138*Math.sin(b)}Z`;}
 export function plinkoPath(bits){let x=150;const points=['M150 12'];bits.forEach((bit,i)=>{if(bit!==0&&bit!==1)throw Error('Invalid path');const before=x;x+=bit===1?15:-15;points.push(`Q${before} ${40+i*26} ${x} ${53+i*26}`);});points.push(`L${x} 270`);return{path:points.join(' '),x};}
 
+export const rouletteDuration=1250;
 export const plinkoDuration=2800;
 // Follow each server-selected deflection, with a small rebound at the next pin.
 export function plinkoPoint(bits,progress){
