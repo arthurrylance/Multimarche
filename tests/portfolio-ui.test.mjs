@@ -22,9 +22,9 @@ test('portfolio defaults to open positions, filters settled/all, searches, and k
  app.field('Search your positions').props.onChange({target:{value:'Homework'}});app.render();assert.equal(app.nodes().filter(n=>n.type==='article').length,1);assert.match(app.text(),/5.00 shares/);app.button('Homework').props.onClick();assert.deepEqual(opened[0],['b','no']);
  app.field('Search your positions').props.onChange({target:{value:'absent'}});app.render();assert.match(app.text(),/No matching positions/);
 });
-test('homepage renders one card per grouped market and tabs open the exact held prediction and side',()=>{
+test('homepage renders one card per grouped market and its dropdown opens the exact held prediction and side',()=>{
  const opened=[],app=mount('ActiveBets.tsx',{rows:rows(),portfolio(){},openMarket:(...args)=>opened.push(args)});app.render();assert.equal(app.nodes().filter(n=>n.type==='article').length,2);assert.doesNotMatch(app.text(),/Settled ·/);
- const tabs=app.nodes().filter(n=>n.props.role==='tab');assert.equal(tabs.length,2);tabs[1].props.onClick();app.render();assert.equal(app.nodes().find(n=>n.props.role==='tabpanel').props['aria-labelledby'],'home-g-tab-b');assert.match(app.text(),/5.00 shares/);app.nodes().find(n=>n.props.className==='holding-open').props.onClick();assert.deepEqual(opened[0],['b','no']);
+ const picker=app.field('Positions in Weekly words');assert.equal(picker.type,'select');assert.equal(picker.props.children.length,2);picker.props.onChange({target:{value:'b'}});app.render();assert.equal(app.field('Positions in Weekly words').props.value,'b');assert.match(app.text(),/5.00 shares/);app.nodes().find(n=>n.props.className==='holding-open').props.onClick();assert.deepEqual(opened[0],['b','no']);
 });
 test('prediction tabs support keyboard switching and focus the active tab',()=>{
  const picked=[],focused=[],app=mount('OptionTabs.tsx',{id:'demo',label:'Predictions',options:[{id:'a',label:'A'},{id:'b',label:'B'}],selected:'a',select:id=>picked.push(id)});app.render();const list=app.nodes().find(n=>n.props.role==='tablist');let prevented=false;
@@ -48,9 +48,9 @@ test('home carousel shows three recent markets at a time, pages through all bets
  app.props.rows=holdings.slice(0,1);app.render();assert.equal(app.nodes().filter(n=>n.type==='article').length,1);assert.equal(app.field('Next 3 bets'),undefined);
 });
 
-test('position card backgrounds open the selected market and held side without intercepting tabs or side buttons',()=>{
+test('position card backgrounds open the selected market and held side without intercepting dropdowns or side buttons',()=>{
  const opened=[],app=mount('PositionCards.tsx',{rows:rows(),openMarket:(...args)=>opened.push(args)});app.render();let card=app.nodes().find(n=>n.type==='article');card.props.onClick({target:{closest:()=>null}});assert.deepEqual(opened[0],['a','yes']);
- app.nodes().filter(n=>n.props.role==='tab')[1].props.onClick();app.render();card=app.nodes().find(n=>n.type==='article');card.props.onClick({target:{closest:()=>({})}});assert.equal(opened.length,1);card.props.onClick({target:{closest:()=>null}});assert.deepEqual(opened[1],['b','no']);
+ app.field('Positions in Weekly words').props.onChange({target:{value:'b'}});app.render();card=app.nodes().find(n=>n.type==='article');card.props.onClick({target:{closest:()=>({})}});assert.equal(opened.length,1);card.props.onClick({target:{closest:()=>null}});assert.deepEqual(opened[1],['b','no']);
  const side=app.nodes().find(n=>n.type==='div'&&n.props.className==='holding-sides').props.children[0];side.props.onClick();card.props.onClick({target:{closest:()=>({})}});assert.equal(opened.length,3);assert.deepEqual(opened[2],['b','no']);
 });
 
@@ -59,7 +59,7 @@ test('held outcomes show their current chance, update with market prices and swi
  const make=(probability=.6)=>summary.positionSummaries([market('both',{probability})],[{market_id:'both',side:'yes',shares:20},{market_id:'both',side:'no',shares:10}]);
  const app=mount('PositionCards.tsx',{rows:make(),openMarket(){}});app.render();assert.match(app.text(),/Yes60%20.00 shares/);assert.match(app.text(),/No40%10.00 shares/);
  app.props.rows=make(.73);app.render();assert.match(app.text(),/Yes73%20.00 shares/);assert.match(app.text(),/No27%10.00 shares/);
- const grouped=mount('ActiveBets.tsx',{rows:rows(),portfolio(){},openMarket(){}});grouped.render();assert.match(grouped.text(),/Yes60%10.00 shares/);grouped.nodes().filter(n=>n.props.role==='tab')[1].props.onClick();grouped.render();assert.match(grouped.text(),/No40%5.00 shares/);
+ const grouped=mount('ActiveBets.tsx',{rows:rows(),portfolio(){},openMarket(){}});grouped.render();assert.match(grouped.text(),/Yes60%10.00 shares/);grouped.field('Positions in Weekly words').props.onChange({target:{value:'b'}});grouped.render();assert.match(grouped.text(),/No40%5.00 shares/);
  const estimate=mount('PositionCards.tsx',{rows:summary.positionSummaries([market('estimate',{price_available:false,execution_model:'clob'})],[{market_id:'estimate',side:'no',shares:5}]),openMarket(){}});estimate.render();assert.match(estimate.text(),/No40% est.5.00 shares/);
  const settled=mount('PositionCards.tsx',{rows:rows().filter(r=>r.market.status==='resolved'),openMarket(){}});settled.render();assert.equal(settled.nodes().filter(n=>n.props.className==='holding-chance').length,0);
 });
