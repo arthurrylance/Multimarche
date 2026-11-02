@@ -1,5 +1,4 @@
 import {useState} from 'react';
-import type {Ref} from 'react';
 import {ArrowUpRight} from 'lucide-react';
 import {formatShares} from './display-format.mjs';
 import {timeRemaining} from './bet-summary.mjs';
@@ -23,6 +22,6 @@ function PositionCard({group,openMarket,now,id}:{group:PositionGroup;openMarket:
   </div>
  </article>;
 }
-export default function PositionCards({rows,openMarket,now=Date.now(),id='positions',layout='grid',scrollRef}:{rows:PositionSummary[];openMarket:(id:string,side?:'yes'|'no')=>void;now?:number;id?:string;layout?:'grid'|'strip';scrollRef?:Ref<HTMLDivElement>}){
- return <div ref={scrollRef} className={layout==='strip'?'holding-strip':'holding-grid'} role={layout==='strip'?'region':undefined} aria-label={layout==='strip'?'Your bets overview':undefined} tabIndex={layout==='strip'?0:undefined}>{groupPositions(rows).map(group=><PositionCard key={group.key} group={group} openMarket={openMarket} now={now} id={id}/>)}</div>;
+export default function PositionCards({rows,openMarket,now=Date.now(),id='positions',layout='grid'}:{rows:PositionSummary[];openMarket:(id:string,side?:'yes'|'no')=>void;now?:number;id?:string;layout?:'grid'|'strip'}){
+ return <div className={layout==='strip'?'holding-strip':'holding-grid'} role={layout==='strip'?'region':undefined} aria-label={layout==='strip'?'Your bets overview':undefined} tabIndex={layout==='strip'?0:undefined}>{groupPositions(rows).map(group=><PositionCard key={group.key} group={group} openMarket={openMarket} now={now} id={id}/>)}</div>;
 }

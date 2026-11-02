@@ -63,6 +63,8 @@
 .active-bets .active-bets-heading{margin-bottom:10px;gap:12px}
 .active-bets .active-bets-heading h2{font-size:14px}
 .bet-overview-actions{display:flex;align-items:center;gap:7px;flex-shrink:0}
+.bet-page{font-size:10px;color:var(--subtle);font-variant-numeric:tabular-nums;white-space:nowrap}
+.bet-scroll:disabled{opacity:.35;cursor:default}
 .bet-overview-actions .text-button{margin-left:5px}
 .bet-overview-actions .bet-scroll{display:inline-flex;align-items:center;justify-content:center;width:27px;height:27px;border:1px solid var(--border);border-radius:5px;background:var(--surface)}
 .holding-strip{display:grid;grid-auto-flow:column;grid-auto-columns:calc((100% - 24px)/3);gap:12px;align-items:start;overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x proximity;scrollbar-width:thin;padding:1px 1px 9px;min-width:0}
