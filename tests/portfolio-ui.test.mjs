@@ -47,3 +47,9 @@ test('home carousel shows three recent markets at a time, pages through all bets
  app.nodes().find(n=>n.type==='button'&&n.props.className==='text-button').props.onClick();assert.equal(openedPortfolio,1);const portfolio=mount('PortfolioPositions.tsx',{rows:holdings,openMarket(){},error:''});portfolio.render();assert.equal(portfolio.nodes().filter(n=>n.type==='article').length,8);assert.ok(portfolio.nodes().some(n=>n.props.className==='holding-grid'));assert.equal(portfolio.field('Your bets overview'),undefined);
  app.props.rows=holdings.slice(0,1);app.render();assert.equal(app.nodes().filter(n=>n.type==='article').length,1);assert.equal(app.field('Next 3 bets'),undefined);
 });
+
+test('position card backgrounds open the selected market and held side without intercepting tabs or side buttons',()=>{
+ const opened=[],app=mount('PositionCards.tsx',{rows:rows(),openMarket:(...args)=>opened.push(args)});app.render();let card=app.nodes().find(n=>n.type==='article');card.props.onClick({target:{closest:()=>null}});assert.deepEqual(opened[0],['a','yes']);
+ app.nodes().filter(n=>n.props.role==='tab')[1].props.onClick();app.render();card=app.nodes().find(n=>n.type==='article');card.props.onClick({target:{closest:()=>({})}});assert.equal(opened.length,1);card.props.onClick({target:{closest:()=>null}});assert.deepEqual(opened[1],['b','no']);
+ const side=app.nodes().find(n=>n.type==='div'&&n.props.className==='holding-sides').props.children[0];side.props.onClick();card.props.onClick({target:{closest:()=>({})}});assert.equal(opened.length,3);assert.deepEqual(opened[2],['b','no']);
+});

@@ -10,7 +10,7 @@
 .holdings-filters button[aria-pressed=true]{color:var(--text);background:var(--surface);box-shadow:0 1px 4px #0001;font-weight:600}
 .holdings-filters input{max-width:260px;min-width:0;width:100%;padding:11px 13px;border:1px solid var(--border);border-radius:7px;background:var(--surface);color:var(--text);font-size:12px;box-sizing:border-box}
 .holding-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px}
-.holding-card{border:1px solid var(--border);background:var(--surface);border-radius:9px;padding:14px;min-width:0;display:flex;flex-direction:column}
+.holding-card{border:1px solid var(--border);background:var(--surface);border-radius:9px;padding:14px;min-width:0;display:flex;flex-direction:column;cursor:pointer}
 .holding-card-heading{display:flex;gap:8px;justify-content:space-between;align-items:baseline;margin-bottom:8px}
 .holding-card-heading h3{font-size:12px;line-height:1.5;margin:0;overflow-wrap:anywhere;min-width:0;flex:1}
 .holding-card-heading>small{font-size:10px;color:var(--subtle);white-space:nowrap}

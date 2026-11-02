@@ -12,7 +12,7 @@ const tone=(n:number|null)=>n===null?'muted':n>=0?'positive':'negative';
 function PositionCard({group,openMarket,now,id}:{group:PositionGroup;openMarket:(id:string,side?:'yes'|'no')=>void;now:number;id:string}){
  const[selected,setSelected]=useState(group.rows[0].market.id),row=group.rows.find(r=>r.market.id===selected)??group.rows[0],m=row.market,settled=m.status==='resolved';
  const panel=`${id}-${m.group_id||m.id}`;
- return <article className="holding-card">
+ return <article className="holding-card" onClick={e=>{if(!(e.target as Element).closest('button,a,input,select,textarea'))openMarket(m.id,row.yes>0?'yes':'no');}}>
   <div className="holding-card-heading"><h3><button type="button" className="holding-open" aria-label={`Open ${m.title}`} onClick={()=>openMarket(m.id,row.yes>0?'yes':'no')}><span>{group.title}</span><ArrowUpRight size={14}/></button></h3>{group.rows.length>1&&<small>{group.rows.length} options</small>}</div>
   {group.rows.length>1&&<OptionTabs id={panel} label={`Positions in ${group.title}`} options={group.rows.map(r=>({id:r.market.id,label:r.market.option_label||r.market.title}))} selected={m.id} select={setSelected}/>}
   <div id={`${panel}-panel`} role={group.rows.length>1?'tabpanel':undefined} aria-labelledby={group.rows.length>1?`${panel}-tab-${m.id}`:undefined}>
