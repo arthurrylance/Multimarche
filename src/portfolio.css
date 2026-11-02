@@ -9,18 +9,20 @@
 .holdings-filters button{padding:9px 16px;border-radius:5px;color:var(--subtle);font-size:12px}
 .holdings-filters button[aria-pressed=true]{color:var(--text);background:var(--surface);box-shadow:0 1px 4px #0001;font-weight:600}
 .holdings-filters input{max-width:260px;min-width:0;width:100%;padding:11px 13px;border:1px solid var(--border);border-radius:7px;background:var(--surface);color:var(--text);font-size:12px;box-sizing:border-box}
-.holding-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--listing-gap,17px);grid-auto-rows:1fr;align-items:stretch}
-.holding-card{border:1px solid var(--border);background:var(--surface);border-radius:9px;padding:14px;min-width:0;display:flex;flex-direction:column;cursor:pointer}
-.holding-card-heading{display:flex;gap:8px;justify-content:space-between;align-items:baseline;margin-bottom:8px;height:63px;min-height:63px}
+.holding-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--listing-gap,17px);align-items:stretch}
+.holding-card{border:1px solid var(--border);background:var(--surface);border-radius:9px;padding:14px;min-width:0;display:grid;grid-template-rows:subgrid;grid-row:span 3;row-gap:0;cursor:pointer}
+.holding-card-header{min-width:0;padding-bottom:8px}
+.holding-card-heading{display:flex;gap:8px;justify-content:space-between;align-items:baseline;margin-bottom:0;min-height:0}
 .holding-card-heading h3{font-size:15px;line-height:21px;margin:0;overflow-wrap:anywhere;min-width:0;flex:1}
 .holding-card-heading>small{font-size:10px;color:var(--subtle);white-space:nowrap}
 .holding-open{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;text-align:left;width:100%;font:inherit;font-weight:600;margin:0;overflow-wrap:anywhere}
 .holding-open svg{flex-shrink:0}
 .holding-open>span{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
-.holding-selector{height:32px;min-height:32px;min-width:0;overflow:hidden;margin-bottom:6px}
+.holding-selector{min-width:0;overflow:hidden;margin-top:7px}
+.holding-selector:empty{display:none}
 .holding-selector .holding-option{margin:0;line-height:26px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%}
-.holding-card-content{display:flex;flex-direction:column;flex:1;min-width:0}
-.holding-finances{margin-top:auto}
+.holding-card-content{display:grid;grid-template-rows:subgrid;grid-row:span 2;row-gap:0;min-width:0}
+.holding-finances{margin-top:0}
 .holding-context{min-height:28px}
 .holding-card .bet-time{margin:0;font-size:9px;white-space:nowrap}
 .holding-context{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin:0 0 10px}
@@ -30,9 +32,9 @@
 .holding-sides small{grid-column:1/-1;font-size:9px;color:var(--subtle)}
 .holding-metrics{margin:0;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);gap:10px}
 .holding-metrics dt{font-size:9px;line-height:1.5;color:var(--subtle);margin-bottom:3px}
-.holding-metrics dd{margin:0;line-height:18px;font-size:14px;font-weight:600;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.holding-metrics dd{margin:0;line-height:25px;font-size:21px;font-weight:650;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
 .holding-metrics>div:last-child{text-align:right}
-.holding-metrics dd small{display:inline-block;font-size:10px;font-weight:500;margin-left:6px}
+.holding-metrics dd small{display:inline-block;line-height:15px;font-size:10px;font-weight:500;margin-left:6px}
 .holding-investment{margin:0;border-top:1px solid var(--border);padding-top:8px}
 .holding-investment>div{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
 .holding-investment dt{font-size:10px;color:var(--subtle)}
@@ -73,24 +75,24 @@
 .bet-scroll:disabled{opacity:.35;cursor:default}
 .bet-overview-actions .text-button{margin-left:5px}
 .bet-carousel{position:relative;min-width:0}
-.bet-carousel-viewport{display:flex;align-items:stretch;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;overscroll-behavior-x:contain;scrollbar-width:none;-ms-overflow-style:none;min-width:0}
+.bet-carousel-viewport{display:grid;grid-auto-flow:column;grid-auto-columns:100%;grid-template-rows:auto auto 1fr;align-items:stretch;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;overscroll-behavior-x:contain;scrollbar-width:none;-ms-overflow-style:none;min-width:0}
 .bet-carousel-viewport::-webkit-scrollbar{display:none}
-.bet-carousel-page{flex:0 0 100%;min-width:0;scroll-snap-align:start;scroll-snap-stop:always;display:flex}
-.bet-carousel .bet-scroll{position:absolute;top:50%;transform:translateY(-50%);z-index:2;display:inline-flex;align-items:center;justify-content:center;width:36px;height:44px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);box-shadow:0 2px 10px #0002}
+.bet-carousel-page{min-width:0;scroll-snap-align:start;scroll-snap-stop:always;display:grid;grid-template-rows:subgrid;grid-row:span 3}
+.bet-carousel .bet-scroll{position:absolute;top:50%;transform:translateY(-50%);z-index:2;display:inline-flex;align-items:center;justify-content:center;width:36px;height:44px;padding:0;border:0;border-radius:0;background:transparent;color:var(--subtle);box-shadow:none}
 .carousel-previous{left:max(-44px,calc((100% - 100vw)/2 + 8px))}
 .carousel-next{right:max(-44px,calc((100% - 100vw)/2 + 8px))}
 .bet-carousel .bet-scroll:focus-visible,.bet-carousel-viewport:focus-visible{outline:2px solid var(--text);outline-offset:3px}
-.holding-strip{display:grid;grid-template-columns:repeat(var(--bet-columns,3),minmax(0,1fr));gap:var(--listing-gap,17px);align-items:stretch;min-width:0;width:100%}
+.holding-strip{display:grid;grid-template-rows:subgrid;grid-row:span 3;grid-template-columns:repeat(var(--bet-columns,3),minmax(0,1fr));column-gap:var(--listing-gap,17px);row-gap:0;align-items:stretch;min-width:0;width:100%}
 .holding-card .prediction-tabs{padding-bottom:0;margin-bottom:6px;gap:5px;scrollbar-width:none;-ms-overflow-style:none}
 .holding-card .prediction-tabs::-webkit-scrollbar{display:none}
 .holding-card .prediction-tabs>button{padding:5px 8px;font-size:10px;max-width:170px}
+.holding-card .prediction-tabs>button>span{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .holding-card .holding-note{font-size:9px;line-height:1.5;margin-top:7px}
 html[data-motion=on] .bet-carousel-viewport{scroll-behavior:smooth}
-html[data-motion=on] .bet-scroll{transition:opacity 150ms ease}
-@media(hover:hover){.bet-carousel .bet-scroll{opacity:0;pointer-events:auto}.bet-carousel:hover .bet-scroll,.bet-carousel:focus-within .bet-scroll{opacity:1;pointer-events:auto}.bet-carousel:hover .bet-scroll:disabled,.bet-carousel:focus-within .bet-scroll:disabled{opacity:.25}}
+.bet-carousel .bet-scroll:hover:not(:disabled),.bet-carousel .bet-scroll:focus-visible{color:var(--text)}
+.bet-carousel .bet-scroll:disabled{opacity:.2}
 @media(max-width:600px){.bet-overview-actions{gap:4px}}
 
-.holding-grid:not(:has(.prediction-tabs,.holding-option)) .holding-selector,.bet-carousel-viewport:not(:has(.prediction-tabs,.holding-option)) .holding-selector{display:none}
 .credit-history .activity-list>div>span{min-width:0;overflow-wrap:anywhere}
 .credit-history .activity-list>div>b{flex-shrink:0;white-space:nowrap}
 
