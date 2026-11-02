@@ -6,4 +6,5 @@ import './settings.css';
 import './minimal.css';
 import './market-trading.css';
 import './portfolio.css';
+import './market-cards.css';
 createRoot(document.getElementById('root')!).render(<React.StrictMode><App/></React.StrictMode>);
