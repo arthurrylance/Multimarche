@@ -10,28 +10,30 @@
 .holdings-filters button[aria-pressed=true]{color:var(--text);background:var(--surface);box-shadow:0 1px 4px #0001;font-weight:600}
 .holdings-filters input{max-width:260px;min-width:0;width:100%;padding:11px 13px;border:1px solid var(--border);border-radius:7px;background:var(--surface);color:var(--text);font-size:12px;box-sizing:border-box}
 .holding-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px}
-.holding-card{border:1px solid var(--border);background:var(--surface);border-radius:10px;padding:20px;min-width:0;display:flex;flex-direction:column}
-.holding-card-heading{display:flex;gap:10px;justify-content:space-between;align-items:baseline;margin-bottom:15px}
-.holding-card-heading h3{font-size:14px;line-height:1.6;margin:0;overflow-wrap:anywhere}
+.holding-card{border:1px solid var(--border);background:var(--surface);border-radius:9px;padding:14px;min-width:0;display:flex;flex-direction:column}
+.holding-card-heading{display:flex;gap:8px;justify-content:space-between;align-items:baseline;margin-bottom:8px}
+.holding-card-heading h3{font-size:12px;line-height:1.5;margin:0;overflow-wrap:anywhere;min-width:0;flex:1}
 .holding-card-heading>small{font-size:10px;color:var(--subtle);white-space:nowrap}
-.holding-open{display:flex;justify-content:space-between;align-items:center;gap:12px;text-align:left;width:100%;font-size:12px;line-height:1.7;font-weight:600;margin:0 0 8px;overflow-wrap:anywhere}
+.holding-open{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;text-align:left;width:100%;font:inherit;font-weight:600;margin:0;overflow-wrap:anywhere}
 .holding-open svg{flex-shrink:0}
-.holding-card .bet-time{margin:0 0 16px}
-.holding-sides{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
-.holding-sides>button{display:grid;grid-template-columns:auto 1fr;gap:5px 8px;border:1px solid var(--border);border-radius:6px;padding:9px 11px;text-align:left;font-size:11px}
+.holding-card .bet-time{margin:0;font-size:9px;white-space:nowrap}
+.holding-context{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin:0 0 10px}
+.holding-option{font-size:10px;line-height:1.5;text-align:left;margin:0 0 8px;overflow-wrap:anywhere}
+.holding-sides{display:flex;gap:6px;flex-wrap:wrap}
+.holding-sides>button{display:grid;grid-template-columns:auto 1fr;gap:3px 5px;border:1px solid var(--border);border-radius:5px;padding:5px 7px;text-align:left;font-size:10px}
 .holding-sides small{grid-column:1/-1;font-size:9px;color:var(--subtle)}
-.holding-metrics{margin:0;display:grid;grid-template-columns:1fr 1fr;gap:17px 12px;border-top:1px solid var(--border);padding-top:16px}
-.holding-metrics dt{font-size:10px;line-height:1.5;color:var(--subtle);margin-bottom:6px}
-.holding-metrics dd{margin:0;font-size:17px;font-weight:600;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
-.holding-investment{margin:0;border-top:1px solid var(--border);padding-top:15px}
+.holding-metrics{margin:0;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);gap:10px}
+.holding-metrics dt{font-size:9px;line-height:1.5;color:var(--subtle);margin-bottom:3px}
+.holding-metrics dd{margin:0;font-size:15px;font-weight:600;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.holding-metrics>div:last-child{text-align:right}
+.holding-metrics dd small{display:inline-block;font-size:10px;font-weight:500;margin-left:6px}
+.holding-investment{margin:0;border-top:1px solid var(--border);padding-top:8px}
 .holding-investment>div{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
-.holding-investment dt{font-size:11px;color:var(--subtle)}
-.holding-investment dd{margin:0;font-size:18px;font-weight:600}
-.holding-settlement{margin-top:17px;border:1px solid var(--border);background:var(--surface-soft);border-radius:7px;padding:13px}
-.holding-settlement h4{font-size:12px;margin:0 0 14px;font-weight:600}
-.holding-settlement .holding-metrics{border:0;padding:0;gap:13px}
-.holding-settlement .holding-metrics>div:first-child{grid-column:1/-1}
-.holding-settlement .holding-metrics>div:first-child dd{font-size:24px}
+.holding-investment dt{font-size:10px;color:var(--subtle)}
+.holding-investment dd{margin:0;font-size:13px;font-weight:600}
+.holding-settlement{margin-top:8px;border:1px solid var(--border);background:var(--surface-soft);border-radius:6px;padding:9px 10px}
+.holding-settlement h4{font-size:10px;margin:0 0 6px;font-weight:500}
+
 .holding-note{font-size:10px;line-height:1.8;color:var(--subtle);margin:14px 0 0}
 .prediction-tabs{display:flex;gap:6px;overflow-x:auto;max-width:100%;padding:2px 1px 10px;margin-bottom:10px;scrollbar-width:thin}
 .prediction-tabs>button{display:flex;align-items:center;gap:8px;flex-shrink:0;max-width:220px;border:1px solid var(--border);background:var(--surface);color:var(--subtle);border-radius:6px;padding:9px 11px;font-size:11px;text-align:left;line-height:1.5}
@@ -55,4 +57,21 @@
 .market-outcome-picker .market-outcome{flex-wrap:wrap}
 .market-outcome-picker .market-outcome>small{flex-basis:100%;font-size:10px;text-align:left;font-weight:400;opacity:.8}
 @media(max-width:900px){.holding-grid,.position-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:600px){.holding-grid,.position-stats{grid-template-columns:1fr}.holdings-filters{flex-wrap:wrap;gap:12px}.holdings-filters input{max-width:none}.holding-card{padding:18px}.holding-metrics dd{font-size:18px}.holding-card-heading h3{font-size:14px}}
+@media(max-width:600px){.holding-grid,.position-stats{grid-template-columns:1fr}.holdings-filters{flex-wrap:wrap;gap:12px}.holdings-filters input{max-width:none}.holding-card{padding:13px}.holding-card-heading h3{font-size:12px}}
+
+.active-bets{margin:0 0 22px}
+.active-bets .active-bets-heading{margin-bottom:10px;gap:12px}
+.active-bets .active-bets-heading h2{font-size:14px}
+.bet-overview-actions{display:flex;align-items:center;gap:7px;flex-shrink:0}
+.bet-overview-actions .text-button{margin-left:5px}
+.bet-overview-actions .bet-scroll{display:inline-flex;align-items:center;justify-content:center;width:27px;height:27px;border:1px solid var(--border);border-radius:5px;background:var(--surface)}
+.holding-strip{display:grid;grid-auto-flow:column;grid-auto-columns:calc((100% - 24px)/3);gap:12px;align-items:start;overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x proximity;scrollbar-width:thin;padding:1px 1px 9px;min-width:0}
+.holding-strip>.holding-card{scroll-snap-align:start}
+.holding-strip:focus-visible{outline:2px solid var(--subtle);outline-offset:3px;border-radius:7px}
+.holding-strip .holding-open>span{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.holding-card .prediction-tabs{padding-bottom:6px;margin-bottom:6px;gap:5px}
+.holding-card .prediction-tabs>button{padding:5px 8px;font-size:10px;max-width:170px}
+.holding-card .holding-note{font-size:9px;line-height:1.5;margin-top:7px}
+html[data-motion=on] .holding-strip{scroll-behavior:smooth}
+@media(max-width:900px){.holding-strip{grid-auto-columns:calc((100% - 12px)/2)}}
+@media(max-width:600px){.holding-strip{grid-auto-columns:86%}.bet-overview-actions{gap:4px}}
