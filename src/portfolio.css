@@ -87,7 +87,7 @@
 .holding-card .holding-note{font-size:9px;line-height:1.5;margin-top:7px}
 html[data-motion=on] .bet-carousel-viewport{scroll-behavior:smooth}
 html[data-motion=on] .bet-scroll{transition:opacity 150ms ease}
-@media(hover:hover){.bet-carousel .bet-scroll{opacity:0;pointer-events:none}.bet-carousel:hover .bet-scroll,.bet-carousel:focus-within .bet-scroll{opacity:1;pointer-events:auto}.bet-carousel:hover .bet-scroll:disabled,.bet-carousel:focus-within .bet-scroll:disabled{opacity:.25}}
+@media(hover:hover){.bet-carousel .bet-scroll{opacity:0;pointer-events:auto}.bet-carousel:hover .bet-scroll,.bet-carousel:focus-within .bet-scroll{opacity:1;pointer-events:auto}.bet-carousel:hover .bet-scroll:disabled,.bet-carousel:focus-within .bet-scroll:disabled{opacity:.25}}
 @media(max-width:600px){.bet-overview-actions{gap:4px}}
 
 .holding-grid:not(:has(.prediction-tabs,.holding-option)) .holding-selector,.bet-carousel-viewport:not(:has(.prediction-tabs,.holding-option)) .holding-selector{display:none}
