@@ -10,10 +10,13 @@ export function positionSummaries(markets,positions,costs={}){
  }
  return [...rows.values()].map(row=>{
   const cost=costs[row.market.id],basis=cost&&Number.isFinite(Number(cost.yes))&&Number.isFinite(Number(cost.no))?Number(cost.yes)+Number(cost.no):null;
-  const priced=row.market.status!=='resolved'&&row.market.price_available!==false;
-  const value=priced?row.yes*Number(row.market.probability)+row.no*(1-Number(row.market.probability)):null;
-  const profit=value!==null&&basis!==null?value-basis:null;
-  return {...row,basis,value,profit,percent:profit!==null&&basis>0?profit/basis*100:null};
+  const outcomes=['yes','no'].filter(side=>row[side]>0).map(side=>{
+   const payout=row[side],profit=basis!==null?payout-basis:null;
+   return {side,payout,profit,percent:profit!==null&&basis>0?profit/basis*100:null};
+  });
+  // Yes and No are alternative settlements, so the best case cannot add both payouts.
+  const payout=Math.max(row.yes,row.no),profit=basis!==null?payout-basis:null;
+  return {...row,basis,outcomes,payout,profit,percent:profit!==null&&basis>0?profit/basis*100:null};
  }).sort((a,b)=>Number(a.market.status==='resolved')-Number(b.market.status==='resolved')||Date.parse(a.market.closes_at)-Date.parse(b.market.closes_at));
 }
 export function groupPositions(rows){
@@ -25,7 +28,6 @@ export function groupPositions(rows){
 }
 export function positionTotals(rows){
  const active=rows.filter(r=>r.market.status!=='resolved'),basis=active.every(r=>r.basis!==null)?active.reduce((sum,r)=>sum+r.basis,0):null;
- const value=active.every(r=>r.value!==null)?active.reduce((sum,r)=>sum+r.value,0):null;
- const profit=basis!==null&&value!==null?value-basis:null;
- return {count:active.length,basis,value,profit,percent:profit!==null&&basis>0?profit/basis*100:null};
+ const payout=active.reduce((sum,r)=>sum+r.payout,0),profit=basis!==null?payout-basis:null;
+ return {count:active.length,basis,payout,profit,percent:profit!==null&&basis>0?profit/basis*100:null};
 }
