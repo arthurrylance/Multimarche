@@ -9,7 +9,7 @@ import {quoteOrder} from './orderbook.mjs';
 import {sharesForBudget,quote} from './math.mjs';
 import {portfolioPosition,projectTrade} from './position-preview.mjs';
 import type {TradeProjection} from './position-preview.mjs';
-import {MarketPositions,PredictionPreview,TradeReview} from './PositionSummary';
+import {ExistingHoldings,MarketPositions,PredictionPreview,TradeReview} from './PositionSummary';
 import type {BookLevel} from './orderbook.mjs';
 import type {Market,Position,BookOrder} from './types';
 import {requiresTradeConfirmation} from './interactions.mjs';
@@ -94,9 +94,10 @@ export default function BookTrading({userId,market:m,side,setSide,balance,positi
    <div className="market-outcome-picker" role="group" aria-label="Outcome">{(['yes','no'] as const).map(s=>{
     const sideLevels=(buying?book?.executable_asks[s]:book?.executable_bids?.[s])??[],best=sideLevels.length?(buying?Math.min(...sideLevels.map(l=>Number(l.price))):Math.max(...sideLevels.map(l=>Number(l.price)))):null;
     const mark=s==='yes'?m.probability:1-m.probability;
-    return <button key={s} type="button" className={`market-outcome ${s} ${side===s?'selected':''}`} aria-pressed={side===s} disabled={busy} onClick={()=>{setSide(s);if(!buying)setBudget('');setError('');}}><span>{s==='yes'?'Yes':'No'}</span><b>{isBook&&best==null?'—':`◈ ${fmt(isBook?best!:mark,4)}`}</b></button>;
+    return <button key={s} type="button" className={`market-outcome ${s} ${side===s?'selected':''}`} aria-pressed={side===s} disabled={busy} onClick={()=>{setSide(s);if(!buying)setBudget('');setError('');}}><span>{s==='yes'?'Yes':'No'}</span><b>{isBook&&best==null?'—':`◈ ${fmt(isBook?best!:mark,4)}`}</b>{(s==='yes'?yes:no)>0&&<small>Owned {formatShares(s==='yes'?yes:no)}</small>}</button>;
    })}</div>
    <p className="market-trade-hint">{buying?'Buy shares in the outcome you believe in.':'Sell shares you own to take profit or change your position.'}</p>
+   <ExistingHoldings position={owned} side={side} action={action} loading={!loaded}/>
    {isBook&&orderMode==='limit'&&<label className="market-limit-price">{buying?'Max buy price':'Min sell price'}<span>◈ <input aria-label="Limit price per share" type="number" min="0.0001" max="0.9999" step="0.0001" value={price} disabled={busy} onChange={e=>setPrice(e.target.value)}/><small>/ share</small></span></label>}
    {!buying&&isBook&&orderMode==='limit'&&<div className="market-sell-duration">{durationControls}</div>}
    <label className="market-amount-label"><span>{buying?(isBook&&orderMode==='market'?'Maximum spend':'Amount'):'Shares to sell'}<small>{buying?`Available ◈ ${fmt(balance)}`:`Available ${formatShares(available)} shares`}</small></span><div>{buying&&<span>◈</span>}<input id={`trade-amount-${m.id}`} aria-label={buying?'Credits to spend':'Shares to sell'} type="number" inputMode="decimal" placeholder="0" min={buying?'0.01':'0.0001'} step={buying?'0.01':'0.0001'} value={budget} disabled={busy} onChange={e=>setBudget(e.target.value)}/>{!buying&&<span>shares</span>}</div></label>
@@ -110,7 +111,7 @@ export default function BookTrading({userId,market:m,side,setSide,balance,positi
     <details className="market-projection-details"><summary>Portfolio after this trade</summary><PredictionPreview value={projection} book={isBook} action={action}/></details>
    </section>}
    {error&&<p className="form-error" role="alert">{error}</p>}
-   <button className={`full trade-submit market-trade-submit ${side==='yes'?'yes-submit':'no-submit'}`} disabled={busy||!loaded||!isOpen||!valid||!enough||noLiquidity||projection.failed||(buying&&factor>1&&!canLeverage)} onClick={()=>void prepare()}>{frozen?'Account timed out':!isOpen?'Trading closed':busy?'Submitting…':!loaded?'Loading…':!buying&&available<.0001?`No ${side==='yes'?'Yes':'No'} shares available`:!enough?(buying?'Insufficient credits':'Insufficient available shares'):noLiquidity?'No liquidity available':projection.failed?'Not enough shares to fill all':`${buying?'Buy':'Sell'} ${side==='yes'?'Yes':'No'}${buying&&factor>1?` · ${factor}×`:''}`}</button>
+   <button className={`full trade-submit market-trade-submit ${side==='yes'?'yes-submit':'no-submit'}`} disabled={busy||!loaded||!isOpen||!valid||!enough||noLiquidity||projection.failed||(buying&&factor>1&&!canLeverage)} onClick={()=>void prepare()}>{frozen?'Account timed out':!isOpen?'Trading closed':busy?'Submitting…':!loaded?'Loading…':!buying&&available<.0001?`No ${side==='yes'?'Yes':'No'} shares available`:!enough?(buying?'Insufficient credits':'Insufficient available shares'):noLiquidity?'No liquidity available':projection.failed?'Not enough shares to fill all':`${buying?(side==='yes'?yes:no)>0?'Buy more':'Buy':'Sell'} ${side==='yes'?'Yes':'No'}${buying&&factor>1?` · ${factor}×`:''}`}</button>
    <p className="market-ticket-foot">{isBook?(orderMode==='market'?'Market order · fills available shares now':'Limit order · waits for your price'):'AMM · trades instantly with the liquidity pool'}</p>
    {buying&&<details className="market-trade-settings" open={advanced} onToggle={e=>setAdvanced(e.currentTarget.open)}><summary>Trade settings</summary>{advanced&&<section className="advanced-bet-options" aria-label="Trade settings">
     {buying&&<><label>Leverage</label><div className="leverage-picker" role="group" aria-label="Leverage">{[1,5,10].map(n=><button type="button" key={n} aria-pressed={factor===n} disabled={busy||(n>1&&!canLeverage)} onClick={()=>setFactor(n)}>{n}×</button>)}</div>
