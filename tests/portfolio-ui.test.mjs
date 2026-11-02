@@ -53,3 +53,13 @@ test('position card backgrounds open the selected market and held side without i
  app.nodes().filter(n=>n.props.role==='tab')[1].props.onClick();app.render();card=app.nodes().find(n=>n.type==='article');card.props.onClick({target:{closest:()=>({})}});assert.equal(opened.length,1);card.props.onClick({target:{closest:()=>null}});assert.deepEqual(opened[1],['b','no']);
  const side=app.nodes().find(n=>n.type==='div'&&n.props.className==='holding-sides').props.children[0];side.props.onClick();card.props.onClick({target:{closest:()=>({})}});assert.equal(opened.length,3);assert.deepEqual(opened[2],['b','no']);
 });
+
+
+test('held outcomes show their current chance, update with market prices and switch with grouped predictions',()=>{
+ const make=(probability=.6)=>summary.positionSummaries([market('both',{probability})],[{market_id:'both',side:'yes',shares:20},{market_id:'both',side:'no',shares:10}]);
+ const app=mount('PositionCards.tsx',{rows:make(),openMarket(){}});app.render();assert.match(app.text(),/Yes60%20.00 shares/);assert.match(app.text(),/No40%10.00 shares/);
+ app.props.rows=make(.73);app.render();assert.match(app.text(),/Yes73%20.00 shares/);assert.match(app.text(),/No27%10.00 shares/);
+ const grouped=mount('ActiveBets.tsx',{rows:rows(),portfolio(){},openMarket(){}});grouped.render();assert.match(grouped.text(),/Yes60%10.00 shares/);grouped.nodes().filter(n=>n.props.role==='tab')[1].props.onClick();grouped.render();assert.match(grouped.text(),/No40%5.00 shares/);
+ const estimate=mount('PositionCards.tsx',{rows:summary.positionSummaries([market('estimate',{price_available:false,execution_model:'clob'})],[{market_id:'estimate',side:'no',shares:5}]),openMarket(){}});estimate.render();assert.match(estimate.text(),/No40% est.5.00 shares/);
+ const settled=mount('PositionCards.tsx',{rows:rows().filter(r=>r.market.status==='resolved'),openMarket(){}});settled.render();assert.equal(settled.nodes().filter(n=>n.props.className==='holding-chance').length,0);
+});
