@@ -52,7 +52,7 @@ test('market buys use protected depth, a budget cap and FAK; successful submissi
  assert.equal(sent(app)[0].args.p_tif,'FAK');assert.equal(sent(app)[0].args.p_price,.603);assert.equal(sent(app)[0].args.p_amount,25);assert.equal(app.field('Credits to spend').props.value,'');assert.equal(app.submit().props.disabled,true);
 });
 test('buying Yes preserves No holdings and requires actual available credits',async()=>{
- const app=await start({positions:[held('no',20,8)]});selectMode(app,'limit');assert.match(app.text(),/Your positions/);assert.match(app.text(),/50\.00 Yes · 20\.00 No/);assert.doesNotMatch(app.text(),/Reduces No|Switches|Clear position/);
+ const app=await start({positions:[held('no',20,8)]});selectMode(app,'limit');assert.match(app.text(),/You already have a position/);assert.match(app.text(),/50\.00 Yes · 20\.00 No/);assert.doesNotMatch(app.text(),/Reduces No|Switches|Clear position/);
  await app.submit().props.onClick();await settle();assert.equal(sent(app)[0].args.p_action,'buy');
  const empty=await start({balance:0,positions:[held('no',100,50)],model:'amm'});assert.equal(empty.submit().props.disabled,true);action(empty,'Sell','no');empty.button('Max').props.onClick();empty.render();assert.equal(empty.submit().props.disabled,false);
 });
@@ -63,8 +63,9 @@ test('sell presets use only unreserved shares on the selected side',async()=>{
 test('selling without holdings, frozen accounts and closed markets cannot submit',async()=>{
  const app=await start({model:'amm'});action(app,'Sell','yes');assert.equal(app.submit().props.disabled,true);assert.match(app.text(),/No Yes shares available/);app.button('Buy').props.onClick();app.props.frozen=true;app.render();assert.equal(app.submit().props.disabled,true);app.props.frozen=false;app.props.market.closes_at=new Date(0).toISOString();app.render();assert.equal(app.submit().props.disabled,true);
 });
-test('position rows show independent basis, shares and direct sell actions',async()=>{
- const app=await start({positions:[held('yes',100,40),held('no',30,12)],bids:[{price:.6,size:200}]});assert.match(app.text(),/Your positions/);assert.match(app.text(),/100\.00 shares/);assert.match(app.text(),/30\.00 shares/);assert.match(app.text(),/◈ 40 paid/);assert.match(app.text(),/If YesTotal return◈ 100Profit \/ loss\+◈ 48/);app.field('Sell No position').props.onClick();app.render();assert.ok(app.field('Shares to sell'));assert.equal(app.submit().props.children,'Sell No');
+test('existing stakes appear only beside the controls and the main Sell action still closes the selected side',async()=>{
+ const app=await start({positions:[held('yes',100,40),held('no',30,12)],bids:[{price:.6,size:200}]});assert.equal(app.nodes().filter(n=>n.props['aria-label']==='Already invested in this market').length,1);assert.doesNotMatch(app.text(),/Your positions|Live holdings|Avg. \/ paid|Settlement & cash-out estimates/);assert.match(app.text(),/Yes · 100\.00 shares◈ 40 investedNo · 30\.00 shares◈ 12 invested/);
+ action(app,'Sell','no');assert.ok(app.field('Shares to sell'));app.button('Max').props.onClick();app.render();assert.equal(app.submit().props.children,'Sell No');await app.submit().props.onClick();await settle();assert.equal(sent(app)[0].args.p_action,'sell');assert.equal(sent(app)[0].args.p_side,'no');assert.equal(sent(app)[0].args.p_amount,30);
 });
 test('leverage stays in settings and only applies to buys from flat',async()=>{
  const app=await start({balance:10,model:'amm'});assert.equal(app.button('5×'),undefined);settings(app);app.button('10×').props.onClick();app.field('Credits to spend').props.onChange({target:{value:'10'}});app.render();assert.equal(app.submit().props.disabled,false);await app.submit().props.onClick();await settle();app.render();assert.equal(sent(app).length,0);assert.match(app.text(),/Maximum loss◈ 100/);assert.ok(app.button('Confirm buy'));app.button('Cancel').props.onClick();action(app,'Sell','yes');assert.equal(app.button('10×'),undefined);

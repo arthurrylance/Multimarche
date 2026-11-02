@@ -15,7 +15,7 @@ function mount(file,props){
 const market=(id,extra={})=>({id,title:id,status:'open',probability:.6,closes_at:'2099-11-04',...extra});
 const rows=()=>summary.positionSummaries([market('a',{group_id:'g',group_title:'Weekly words',option_label:'Level 7',group_position:0}),market('b',{group_id:'g',group_title:'Weekly words',option_label:'Homework',group_position:1}),market('solo'),market('done',{status:'resolved',outcome:'yes'})],[{market_id:'a',side:'yes',shares:10},{market_id:'b',side:'no',shares:5},{market_id:'solo',side:'yes',shares:20},{market_id:'done',side:'yes',shares:3}],{a:{yes:4,no:0},b:{yes:0,no:3},solo:{yes:10,no:0}});
 test('portfolio defaults to open positions, filters settled/all, searches, and keeps open-only summary widgets',()=>{
- const opened=[],app=mount('PortfolioPositions.tsx',{rows:rows(),openMarket:(...args)=>opened.push(args),error:''});app.render();assert.equal(app.button('Open').props['aria-pressed'],true);assert.doesNotMatch(app.text(),/Settled · YES/);assert.match(app.text(),/Invested in open positions◈ 17/);assert.match(app.text(),/Estimated current profit/);
+ const opened=[],app=mount('PortfolioPositions.tsx',{rows:rows(),openMarket:(...args)=>opened.push(args),error:''});app.render();assert.equal(app.button('Open').props['aria-pressed'],true);assert.doesNotMatch(app.text(),/Settled · YES/);assert.match(app.text(),/Invested in open positions◈ 17/);assert.match(app.text(),/Potential payout◈ 35/);assert.match(app.text(),/Potential profit\+◈ 18/);assert.match(app.text(),/Potential return\+105.88%/);assert.doesNotMatch(app.text(),/Estimated current profit|Current value|Profit \/ loss \(est/);
  assert.equal(app.nodes().filter(n=>n.type==='article').length,2);
  app.button('Settled').props.onClick();app.render();assert.match(app.text(),/Settled · YES/);assert.equal(app.nodes().filter(n=>n.type==='article').length,1);assert.match(app.text(),/Invested in open positions◈ 17/);
  app.button('All').props.onClick();app.render();assert.equal(app.nodes().filter(n=>n.type==='article').length,3);
@@ -33,4 +33,9 @@ test('prediction tabs support keyboard switching and focus the active tab',()=>{
 test('portfolio holdings render before pending bets, and grouped listings occupy one grid column',()=>{
  const app=readFileSync(new URL('../src/App.tsx',import.meta.url),'utf8'),portfolio=app.slice(app.indexOf('function Portfolio('));assert.ok(portfolio.indexOf('<PortfolioPositions')<portfolio.indexOf('<MyOrders'));
  const css=readFileSync(new URL('../src/portfolio.css',import.meta.url),'utf8');assert.match(css,/\.group-market-card\{grid-column:auto;/);assert.doesNotMatch(readFileSync(new URL('../src/minimal.css',import.meta.url),'utf8'),/\.group-market-card\{grid-column:1\/-1/);
+});
+
+test('position cards show investment, winning payout and profit/return for each held outcome',()=>{
+ const heldRows=summary.positionSummaries([market('both')],[{market_id:'both',side:'yes',shares:20},{market_id:'both',side:'no',shares:10}],{both:{yes:8,no:3}});
+ const app=mount('PositionCards.tsx',{rows:heldRows,openMarket(){}});app.render();assert.match(app.text(),/Invested◈ 11/);assert.match(app.text(),/If Yes winsPayout◈ 20Profit\+◈ 9Return\+81.82%/);assert.match(app.text(),/If No winsPayout◈ 10Profit−◈ 1Return-9.09%/);assert.match(app.text(),/Only the winning side pays out/);assert.doesNotMatch(app.text(),/Current value|Profit \/ loss/);
 });

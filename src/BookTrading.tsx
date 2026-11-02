@@ -7,9 +7,9 @@ import {OrdersList} from './MyOrders';
 import {bookQuote} from './trading-quote.mjs';
 import {quoteOrder} from './orderbook.mjs';
 import {sharesForBudget,quote} from './math.mjs';
-import {portfolioPosition,projectTrade} from './position-preview.mjs';
+import {projectTrade} from './position-preview.mjs';
 import type {TradeProjection} from './position-preview.mjs';
-import {ExistingHoldings,MarketPositions,PredictionPreview,TradeReview} from './PositionSummary';
+import {ExistingHoldings,PredictionPreview,TradeReview} from './PositionSummary';
 import type {BookLevel} from './orderbook.mjs';
 import type {Market,Position,BookOrder} from './types';
 import {requiresTradeConfirmation} from './interactions.mjs';
@@ -51,7 +51,7 @@ export default function BookTrading({userId,market:m,side,setSide,balance,positi
  const enough=buying?Number(budget)<=Math.max(0,balance)+1e-8:qty<=available+1e-8;
  const debt=loan?.market_id===m.id?Number(loan.remaining):0,hasPending=!!book?.orders.some(o=>o.status==='open');
  const projection=projectTrade({market:m,yes,no,basisYes,basisNo,side,action,quantity:Number.isFinite(qty)?qty:0,limit:Number.isFinite(limit)?limit!:0,levels,tif:effectiveTif,debt,draw:buying&&factor>1&&!loan&&yes+no===0?Math.max(0,exposure-Number(budget)):0,hasPending});
- const owned=portfolioPosition({market:m,yes,no,basisYes,basisNo,debt,bidsYes:book?.executable_bids?.yes??[],bidsNo:book?.executable_bids?.no??[]});
+ const owned={yesShares:yes,noShares:no,basisYes,basisNo};
  const noLiquidity=isBook&&orderMode==='market'&&!levels.some(l=>Number(l.size)>0);
  const estimatedShares=isBook?projection.matched:qty;
  const estimatedCash=projection.cash;
@@ -121,7 +121,6 @@ export default function BookTrading({userId,market:m,side,setSide,balance,positi
     {isBook&&orderMode==='limit'&&durationControls}
    </section>}</details>}
   </div>
-  {m.status!=='resolved'&&<MarketPositions position={owned} probability={m.probability} reservedYes={Number(current.find(p=>p.side==='yes')?.reserved_shares??0)} reservedNo={Number(current.find(p=>p.side==='no')?.reserved_shares??0)} closed={!isOpen||busy} loading={!loaded} onSell={s=>{choose('sell',s);const input=document.getElementById(`trade-amount-${m.id}`);input?.focus({preventScroll:true});input?.scrollIntoView({block:'nearest'});}}/>}
   {isBook&&<details className="market-orderbook"><summary>Order book <span>{side==='yes'?'Yes':'No'}</span></summary><section className="book-depth"><div className="depth-head"><span>Price ◈</span><span>Shares</span></div><h4>Asks · buy from sellers</h4>{!(book?.asks[side]??[]).length&&<p className="tiny muted">No asks yet</p>}{(book?.asks[side]??[]).slice(0,8).map(l=><button type="button" key={l.price} aria-label={`Buy ${side} at ${l.price}`} onClick={()=>{choose('buy',side);setOrderMode('limit');setPrice(String(l.price));}}><span className="negative">{fmt(l.price,4)}</span><span>{formatShares(l.size)}</span></button>)}<h4>Bids · sell to buyers</h4>{!(book?.bids[side]??[]).length&&<p className="tiny muted">No bids yet</p>}{(book?.bids[side]??[]).slice(0,8).map(l=><button type="button" key={l.price} aria-label={`Sell ${side} at ${l.price}`} onClick={()=>{choose('sell',side);setOrderMode('limit');setPrice(String(l.price));}}><span className="positive">{fmt(l.price,4)}</span><span>{formatShares(l.size)}</span></button>)}</section></details>}
   {isBook&&book?.orders.some(o=>o.status==='open')&&<details className="market-pending-orders" open><summary>Open orders <span>{book.orders.filter(o=>o.status==='open').length}</span></summary><section className="market-open-orders"><button type="button" className="text-button" disabled={busy} onClick={()=>void cancel(null)}>Cancel all</button><OrdersList orders={book.orders} busy={busy} cancel={id=>void cancel(id)}/></section></details>}
   {review&&<Modal title={review.p_action==='buy'?'Confirm purchase':'Confirm sale'} className="trade-confirmation-modal" onClose={closeReview}><div className="trade-confirmation"><p className="trade-review-question">{m.title}</p><TradeReview action={review.p_action} side={review.p_side} amount={review.p_amount} factor={review.p_factor} price={review.p_price} expires={review.p_expires} projection={review.projection} quote={review.quote}/>{error&&<p className="form-error" role="alert">{error}</p>}<div className="confirm-actions"><button className="secondary" disabled={busy} onClick={closeReview}>Cancel</button><button className="primary" disabled={busy} onClick={()=>void submit(review)}>{busy?'Submitting…':review.p_action==='buy'?'Confirm buy':'Confirm sell'}</button></div></div></Modal>}
