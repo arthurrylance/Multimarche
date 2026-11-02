@@ -1,0 +1,43 @@
+/* Every listing uses the same header, selector, summary, context, actions and footer. */
+.market-grid{align-items:stretch;grid-auto-rows:1fr}
+.market-grid>.market-card{display:flex;flex-direction:column;gap:6px;grid-column:auto}
+.market-grid .market-card .card-top{display:grid;grid-template-columns:minmax(0,1fr) 24px;gap:8px;align-items:start;height:63px;min-height:63px;flex:none}
+.market-grid .card-top .market-title{padding:0;min-width:0;font-size:14px;line-height:21px;max-height:63px;white-space:normal;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.market-grid .card-top .watch-button{position:static;width:24px;height:24px;padding:2px;justify-self:end}
+.market-grid .card-options{height:36px;min-height:36px;min-width:0;display:flex;align-items:center;overflow:hidden;flex:none}
+.market-grid .card-options .market-method{margin:0;font-size:10px}
+.market-grid .card-options .prediction-tabs{width:100%;height:36px;box-sizing:border-box;padding:0;margin:0;align-items:stretch;gap:5px}
+.market-grid .prediction-tabs>button{min-width:0;max-width:190px;flex-shrink:0;padding:4px 8px;font-size:10px;line-height:18px}
+.market-grid .prediction-tabs>button>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.market-grid .prediction-tabs>button>small{font-size:9px}
+.market-grid .card-body{display:grid;grid-template-rows:46px 18px 38px;gap:6px;min-width:0;margin:2px 0 6px}
+.market-grid .card-body .card-prob{display:flex;align-items:center;justify-content:space-between;gap:10px;height:46px;margin:0;min-width:0}
+.market-grid .card-prob>div:first-child{display:grid;gap:2px;align-items:start;min-width:0;max-width:50%}
+.market-grid .card-prob strong{font-size:28px;line-height:1;white-space:nowrap}
+.market-grid .card-prob strong>span{font-size:20px}
+.market-grid .card-prob .chance-label{font-size:9px;line-height:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.market-grid .group-selected-option{max-width:60%;min-width:0;text-align:right;font-size:11px;line-height:16px;max-height:32px;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.market-grid .card-context{height:18px;display:flex;align-items:center;justify-content:space-between;gap:8px;overflow:hidden;font-size:9px;color:var(--subtle)}
+.market-grid .card-context>span,.market-grid .card-context .counter-chip{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:9px;margin:0;display:block}
+.market-grid .card-body .outcomes{height:38px;margin:0;gap:8px;align-items:stretch}
+.market-grid .outcomes>button{min-width:0;padding:0 10px;font-size:11px}
+.market-grid .outcomes>button>span{font-size:9px;white-space:nowrap}
+.market-grid .outcomes.resolved-outcomes>button{grid-column:1/-1;justify-content:center}
+.market-grid .market-card .card-bottom{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:8px;min-height:40px;height:40px;box-sizing:border-box;margin-top:auto;padding:0;font-size:9px;flex:none}
+.market-grid .card-bottom>span{min-width:0;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.market-grid .card-bottom>span:last-child{text-align:right}
+.market-grid .card-bottom svg{vertical-align:middle;margin-right:4px}
+@media(max-width:520px){
+ .market-grid .market-card .card-top{height:54px;min-height:54px}
+ .market-grid .card-top .market-title{font-size:12px;line-height:18px;max-height:54px}
+ .market-grid .card-body{grid-template-rows:42px 18px 34px}
+ .market-grid .card-body .card-prob{height:42px;gap:6px}
+ .market-grid .card-prob strong{font-size:23px}
+ .market-grid .card-prob strong>span{font-size:17px}
+ .market-grid .group-selected-option{font-size:10px;line-height:15px;max-height:30px}
+ .market-grid .card-body .outcomes{height:34px;gap:5px}
+ .market-grid .outcomes>button{padding:0 6px;font-size:10px}
+ .market-grid .outcomes>button>span{font-size:8px}
+ .market-grid .market-card .card-bottom{grid-template-columns:minmax(0,1fr);grid-template-rows:1fr 1fr;gap:0;height:38px;min-height:38px;padding:3px 0;font-size:8px}
+ .market-grid .card-bottom>span:last-child{text-align:left}
+}

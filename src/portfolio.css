@@ -66,7 +66,10 @@
 .bet-page{font-size:10px;color:var(--subtle);font-variant-numeric:tabular-nums;white-space:nowrap}
 .bet-scroll:disabled{opacity:.35;cursor:default}
 .bet-overview-actions .text-button{margin-left:5px}
-.bet-overview-actions .bet-scroll{display:inline-flex;align-items:center;justify-content:center;width:27px;height:27px;border:1px solid var(--border);border-radius:5px;background:var(--surface)}
+.bet-carousel{min-width:0}
+.bet-carousel.has-pages{display:grid;grid-template-columns:40px minmax(0,1fr) 40px;gap:10px;align-items:center}
+.bet-carousel .bet-scroll{display:inline-flex;align-items:center;justify-content:center;width:40px;height:44px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text)}
+.bet-carousel .bet-scroll:focus-visible{outline:2px solid var(--text);outline-offset:3px}
 .holding-strip{display:grid;grid-auto-flow:column;grid-auto-columns:calc((100% - 24px)/3);gap:12px;align-items:start;overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x proximity;scrollbar-width:thin;padding:1px 1px 9px;min-width:0}
 .holding-strip>.holding-card{scroll-snap-align:start}
 .holding-strip:focus-visible{outline:2px solid var(--subtle);outline-offset:3px;border-radius:7px}
@@ -76,4 +79,4 @@
 .holding-card .holding-note{font-size:9px;line-height:1.5;margin-top:7px}
 html[data-motion=on] .holding-strip{scroll-behavior:smooth}
 @media(max-width:900px){.holding-strip{grid-auto-columns:calc((100% - 12px)/2)}}
-@media(max-width:600px){.holding-strip{grid-auto-columns:86%}.bet-overview-actions{gap:4px}}
+@media(max-width:600px){.holding-strip{grid-auto-columns:86%}.bet-overview-actions{gap:4px}.bet-carousel.has-pages{grid-template-columns:28px minmax(0,1fr) 28px;gap:6px}.bet-carousel .bet-scroll{width:28px}}
