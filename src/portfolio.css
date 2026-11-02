@@ -29,6 +29,7 @@
 .holding-option{font-size:10px;line-height:1.5;text-align:left;margin:0 0 8px;overflow-wrap:anywhere}
 .holding-sides{display:flex;gap:6px;flex-wrap:wrap}
 .holding-sides>button{display:grid;grid-template-columns:auto 1fr;gap:3px 5px;border:1px solid var(--border);border-radius:5px;padding:5px 7px;text-align:left;font-size:10px}
+.holding-chance{margin-left:6px;font-weight:500;font-variant-numeric:tabular-nums}
 .holding-sides small{grid-column:1/-1;font-size:9px;color:var(--subtle)}
 .holding-metrics{margin:0;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);gap:10px}
 .holding-metrics dt{font-size:9px;line-height:1.5;color:var(--subtle);margin-bottom:3px}
