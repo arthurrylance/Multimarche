@@ -1,10 +1,11 @@
+import {formatShares,formatDateTime} from './display-format.mjs';
 import {useEffect,useState} from 'react';
 import {supabase} from './db';
 import type {BookOrder,Market} from './types';
 const fmt=(n:number)=>Number(n).toLocaleString(undefined,{maximumFractionDigits:4});
 export function OrdersList({orders,busy,cancel,markets,simple=true}:{orders:BookOrder[];busy:boolean;cancel:(id:string)=>void;markets?:Market[];simple?:boolean}){
  const open=orders.filter(o=>o.status==='open');
- return <div className="open-orders">{open.map(o=><div className="open-order" key={o.id}><div>{markets&&<b>{markets.find(m=>m.id===o.market_id)?.title||'Market'}</b>}<span className={o.side==='yes'?'positive':'negative'}>{simple?`${o.action==='buy'?'Buy':'Sell'} ${o.side.toUpperCase()}`:`${o.action.toUpperCase()} ${o.side.toUpperCase()} · ◈ ${fmt(o.price)}`}</span><small>{simple?<>{fmt(o.remaining)} shares waiting · ◈ {fmt(o.price)} each · {Math.round(Number(o.filled)/Number(o.quantity)*100)}% matched</>:<>{fmt(o.filled)} / {fmt(o.quantity)} shares filled · {o.tif}</>}<br/>Until {new Date(o.expires_at).toLocaleString()}</small></div><button className="text-button" disabled={busy} onClick={()=>cancel(o.id)}>Cancel</button></div>)}{!open.length&&<p className="tiny muted">No pending bets.</p>}</div>;
+ return <div className="open-orders">{open.map(o=><div className="open-order" key={o.id}><div>{markets&&<b>{markets.find(m=>m.id===o.market_id)?.title||'Market'}</b>}<span className={o.side==='yes'?'positive':'negative'}>{simple?`${o.action==='buy'?'Buy':'Sell'} ${o.side.toUpperCase()}`:`${o.action.toUpperCase()} ${o.side.toUpperCase()} · ◈ ${fmt(o.price)}`}</span><small>{simple?<>{formatShares(o.remaining)} shares waiting · ◈ {fmt(o.price)} each · {Math.round(Number(o.filled)/Number(o.quantity)*100)}% matched</>:<>{formatShares(o.filled)} / {formatShares(o.quantity)} shares filled · {o.tif}</>}<br/>Until {formatDateTime(o.expires_at)}</small></div><button className="text-button" disabled={busy} onClick={()=>cancel(o.id)}>Cancel</button></div>)}{!open.length&&<p className="tiny muted">No pending bets.</p>}</div>;
 }
 export default function MyOrders({tick,markets,refresh,notify}:{tick:number;markets:Market[];refresh:()=>void;notify:(s:string)=>void}){
  const[orders,setOrders]=useState<BookOrder[]>([]),[busy,setBusy]=useState(false);
