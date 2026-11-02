@@ -30,6 +30,14 @@ const sent=app=>app.calls.filter(c=>c.name==='execute_trade');
 const selectMode=(app,mode)=>{app.field('Order type').props.onChange({target:{value:mode}});app.render();};
 const action=(app,a,side)=>{app.button(a).props.onClick();app.render();app.nodes().find(n=>n.type==='button'&&n.key===side&&n.props.className?.includes('market-outcome')).props.onClick();app.render();};
 const settings=app=>{app.nodes().find(n=>n.type==='details'&&n.props.className==='market-trade-settings').props.onToggle({currentTarget:{open:true}});app.render();};
+test('the trade ticket shows existing Yes and No stakes before the amount and makes additions explicit',async()=>{
+ const app=await start({model:'amm',positions:[held('yes',20,8),held('no',10,3)]});
+ assert.match(app.text(),/You already have a positionYes · 20.00 shares◈ 8 investedNo · 10.00 shares◈ 3 invested/);assert.match(app.text(),/This purchase adds to your Yes position/);assert.equal(app.submit().props.children,'Buy more Yes');
+ const nodes=app.nodes();assert.ok(nodes.findIndex(n=>n.props['aria-label']==='Already invested in this market')<nodes.findIndex(n=>n.props['aria-label']==='Credits to spend'));
+ action(app,'Buy','no');assert.match(app.text(),/This purchase adds to your No position/);assert.equal(app.submit().props.children,'Buy more No');
+ action(app,'Sell','no');assert.match(app.text(),/Selling reduces your No shares/);
+ const empty=await start({model:'amm'});assert.doesNotMatch(empty.text(),/You already have a position/);assert.equal(empty.submit().props.children,'Buy Yes');
+});
 test('separate Buy/Sell and Yes/No controls submit explicit budget buys',async()=>{
  const app=await start();assert.ok(app.button('Buy'));assert.ok(app.button('Sell'));assert.ok(app.field('Outcome'));assert.ok(app.field('Credits to spend'));
  selectMode(app,'limit');await app.submit().props.onClick();await settle();assert.equal(sent(app)[0].args.p_action,'buy');assert.equal(sent(app)[0].args.p_amount,25);assert.equal(sent(app)[0].args.p_side,'yes');assert.equal(sent(app)[0].args.p_price,.5);assert.equal(sent(app)[0].args.p_tif,'GTC');assert.equal('projection' in sent(app)[0].args,false);

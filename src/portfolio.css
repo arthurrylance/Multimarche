@@ -1,0 +1,48 @@
+.portfolio-holdings{margin:6px 0 30px;min-width:0}
+.position-stats{margin-top:0}
+.holdings-heading{display:flex;justify-content:space-between;align-items:center;gap:15px;margin:20px 0 16px}
+.holdings-heading .section-title{margin:0}
+.holdings-heading>span{color:var(--subtle);font-size:11px}
+.holdings-filters{display:flex;align-items:center;justify-content:space-between;gap:15px;margin-bottom:18px}
+.holdings-filters>[role=group]{display:flex;gap:5px;background:var(--surface-soft);padding:4px;border-radius:7px}
+.holdings-filters button{padding:9px 16px;border-radius:5px;color:var(--subtle);font-size:12px}
+.holdings-filters button[aria-pressed=true]{color:var(--text);background:var(--surface);box-shadow:0 1px 4px #0001;font-weight:600}
+.holdings-filters input{max-width:260px;min-width:0;width:100%;padding:11px 13px;border:1px solid var(--border);border-radius:7px;background:var(--surface);color:var(--text);font-size:12px;box-sizing:border-box}
+.holding-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px}
+.holding-card{border:1px solid var(--border);background:var(--surface);border-radius:10px;padding:20px;min-width:0;display:flex;flex-direction:column}
+.holding-card-heading{display:flex;gap:10px;justify-content:space-between;align-items:baseline;margin-bottom:15px}
+.holding-card-heading h3{font-size:14px;line-height:1.6;margin:0;overflow-wrap:anywhere}
+.holding-card-heading>small{font-size:10px;color:var(--subtle);white-space:nowrap}
+.holding-open{display:flex;justify-content:space-between;align-items:center;gap:12px;text-align:left;width:100%;font-size:12px;line-height:1.7;font-weight:600;margin:0 0 8px;overflow-wrap:anywhere}
+.holding-open svg{flex-shrink:0}
+.holding-card .bet-time{margin:0 0 16px}
+.holding-sides{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
+.holding-sides>button{display:grid;grid-template-columns:auto 1fr;gap:5px 8px;border:1px solid var(--border);border-radius:6px;padding:9px 11px;text-align:left;font-size:11px}
+.holding-sides small{grid-column:1/-1;font-size:9px;color:var(--subtle)}
+.holding-metrics{margin:0;display:grid;grid-template-columns:1fr 1fr;gap:17px 12px;border-top:1px solid var(--border);padding-top:16px}
+.holding-metrics dt{font-size:10px;line-height:1.5;color:var(--subtle);margin-bottom:6px}
+.holding-metrics dd{margin:0;font-size:17px;font-weight:600;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.holding-note{font-size:10px;line-height:1.8;color:var(--subtle);margin:14px 0 0}
+.prediction-tabs{display:flex;gap:6px;overflow-x:auto;max-width:100%;padding:2px 1px 10px;margin-bottom:10px;scrollbar-width:thin}
+.prediction-tabs>button{display:flex;align-items:center;gap:8px;flex-shrink:0;max-width:220px;border:1px solid var(--border);background:var(--surface);color:var(--subtle);border-radius:6px;padding:9px 11px;font-size:11px;text-align:left;line-height:1.5}
+.prediction-tabs>button>span{overflow-wrap:anywhere}
+.prediction-tabs>button>small{white-space:nowrap;font-size:10px}
+.prediction-tabs>button[aria-selected=true]{background:var(--surface-soft);border-color:var(--text);color:var(--text);font-weight:600}
+.prediction-tabs button:focus-visible,.holdings-filters button:focus-visible,.holding-card button:focus-visible{outline:2px solid var(--text);outline-offset:3px}
+.group-market-card{grid-column:auto;min-width:0}
+.group-market-card .group-option{grid-template-columns:minmax(0,1fr) 50px 26px;gap:9px;padding:12px 0}
+.group-market-card .group-option-title{grid-column:1}
+.group-market-card .group-option>strong{grid-column:2}
+.group-market-card .group-option>.watch-button{position:static;grid-column:3;grid-row:1}
+.group-market-card .group-option-trade{grid-column:1/-1;grid-row:2}
+.group-market-card .group-independence{margin-bottom:10px}
+.group-market-card .card-bottom{gap:8px;flex-wrap:wrap}
+.existing-holdings{background:var(--surface-soft);border:1px solid var(--border);border-radius:8px;padding:13px 14px;margin:0 0 20px}
+.existing-holdings h3{font-size:12px;font-weight:600;margin:0 0 10px}
+.existing-holdings>div{display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-size:11px;line-height:1.7;margin-top:7px;flex-wrap:wrap}
+.existing-holdings small{font-size:10px;color:var(--subtle)}
+.existing-holdings p{font-size:10px;line-height:1.7;margin:11px 0 0;color:var(--subtle)}
+.market-outcome-picker .market-outcome{flex-wrap:wrap}
+.market-outcome-picker .market-outcome>small{flex-basis:100%;font-size:10px;text-align:left;font-weight:400;opacity:.8}
+@media(max-width:900px){.holding-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){.holding-grid{grid-template-columns:1fr}.holdings-filters{flex-wrap:wrap;gap:12px}.holdings-filters input{max-width:none}.holding-card{padding:18px}.holding-metrics dd{font-size:18px}.holding-card-heading h3{font-size:14px}}
