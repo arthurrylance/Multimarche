@@ -63,3 +63,10 @@ test('held outcomes show their current chance, update with market prices and swi
  const estimate=mount('PositionCards.tsx',{rows:summary.positionSummaries([market('estimate',{price_available:false,execution_model:'clob'})],[{market_id:'estimate',side:'no',shares:5}]),openMarket(){}});estimate.render();assert.match(estimate.text(),/No40% est.5.00 shares/);
  const settled=mount('PositionCards.tsx',{rows:rows().filter(r=>r.market.status==='resolved'),openMarket(){}});settled.render();assert.equal(settled.nodes().filter(n=>n.props.className==='holding-chance').length,0);
 });
+
+test('home bet cards show current value and unrealized result alongside the winning payout',()=>{
+ const app=mount('ActiveBets.tsx',{rows:rows(),openMarket(){},portfolio(){}});app.render();
+ assert.match(app.text(),/Current value◈ 6Unrealized P\/L\+◈ 2If Yes wins/);
+ app.prediction('Positions in Weekly words').props.onClick();app.render();
+ assert.match(app.text(),/Current value◈ 2Unrealized P\/L−◈ 1If No wins/);
+});
