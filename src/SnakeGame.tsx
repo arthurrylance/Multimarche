@@ -4,9 +4,18 @@ import {supabase} from './db';
 import SnakeArtwork from './SnakeArtwork';
 import {SnakeTransport,snakeInitial,snakeTick} from './snake.mjs';
 import type {SnakeSnapshot} from './snake.mjs';
-const keys:Record<string,number>={ArrowUp:0,w:0,W:0,ArrowRight:1,d:1,D:1,ArrowDown:2,s:2,S:2,ArrowLeft:3,a:3,A:3};
+type KeyboardLayout='auto'|'qwerty'|'azerty';
+const arrowDirections:Record<string,number>={ArrowUp:0,ArrowRight:1,ArrowDown:2,ArrowLeft:3};
+const physicalDirections:Record<string,number>={KeyW:0,KeyD:1,KeyS:2,KeyA:3};
+const qwertyDirections:Record<string,number>={w:0,d:1,s:2,a:3};
+const azertyDirections:Record<string,number>={z:0,d:1,s:2,q:3};
+function savedLayout():KeyboardLayout{
+ try{const value=localStorage.getItem('multimarche-snake-layout');return value==='qwerty'||value==='azerty'?value:'auto';}catch{return 'auto';}
+}
 export default function SnakeGame({frozen,motion,refresh,active=true}:{frozen:boolean;motion:boolean;active?:boolean;refresh:()=>void}){
  const[snapshot,setSnapshot]=useState<SnakeSnapshot|null>(null),[running,setRunning]=useState(false),[busy,setBusy]=useState(false),[error,setError]=useState('');
+ const[keyboardLayout,setKeyboardLayout]=useState<KeyboardLayout>(savedLayout),[detectedLayout,setDetectedLayout]=useState<'qwerty'|'azerty'|null>(null);
+ const layout=useRef<HTMLDivElement>(null),controls=useRef<HTMLElement>(null);
  const transport=useRef<SnakeTransport|null>(null),board=useRef<HTMLDivElement>(null),turns=useRef<number[]>([]),swipe=useRef<{x:number;y:number}|null>(null),refreshRef=useRef(refresh),flight=useRef(false),visible=useRef(active),shortcut=useRef<(event:KeyboardEvent)=>void>(()=>{});
  refreshRef.current=refresh;visible.current=active;
  useEffect(()=>{let mounted=true;const client=new SnakeTransport((name,args)=>supabase.rpc(name,args),data=>{if(mounted)setSnapshot(data);},message=>{if(mounted){setError(message);setRunning(false);}},()=>refreshRef.current());transport.current=client;void client.load().catch(e=>{if(mounted)setError(e.message||'Could not load Snake.');});return()=>{mounted=false;client.dispose();};},[]);
@@ -26,13 +35,46 @@ export default function SnakeGame({frozen,motion,refresh,active=true}:{frozen:bo
   event.preventDefault();void start();
  };
  useEffect(()=>{const keydown=(event:KeyboardEvent)=>shortcut.current(event);window.addEventListener('keydown',keydown);return()=>window.removeEventListener('keydown',keydown);},[]);
- return <section className="snake-game" onKeyDown={e=>{const direction=keys[e.key];if(direction!==undefined){e.preventDefault();turn(direction);}}}>
+ useEffect(()=>{
+  const area=layout.current,sidebar=controls.current;
+  if(!active||!area||!sidebar)return;
+  const fit=()=>{
+   const viewport=window.visualViewport?.height??window.innerHeight;
+   const top=area.getBoundingClientRect().top+window.scrollY;
+   area.style.setProperty('--snake-room',`${Math.max(0,viewport-top-12)}px`);
+   area.style.setProperty('--snake-controls-height',`${sidebar.offsetHeight}px`);
+  };
+  fit();
+  const observer=typeof ResizeObserver==='undefined'?null:new ResizeObserver(fit);
+  observer?.observe(sidebar);
+  const header=document.querySelector('.header');if(header)observer?.observe(header);
+  window.addEventListener('resize',fit);window.visualViewport?.addEventListener('resize',fit);
+  return()=>{observer?.disconnect();window.removeEventListener('resize',fit);window.visualViewport?.removeEventListener('resize',fit);};
+ },[active]);
+ const layoutForHint=keyboardLayout==='auto'?detectedLayout:keyboardLayout;
+ const movementKeys=layoutForHint==='azerty'?'ZQSD':layoutForHint==='qwerty'?'WASD':'WASD / ZQSD';
+ return <section className="snake-game" onKeyDown={event=>{
+  if(!active||!running||over||event.altKey||event.ctrlKey||event.metaKey||event.nativeEvent.isComposing||(event.target as Element).closest('select,input,textarea,[contenteditable]'))return;
+  const key=event.key.toLowerCase();
+  if(keyboardLayout==='auto'){
+   if((event.code==='KeyW'&&key==='z')||(event.code==='KeyA'&&key==='q'))setDetectedLayout('azerty');
+   if((event.code==='KeyW'&&key==='w')||(event.code==='KeyA'&&key==='a'))setDetectedLayout('qwerty');
+  }
+  const hasPhysicalCode=event.code&&event.code!=='Unidentified';
+  const autoDirection=hasPhysicalCode?physicalDirections[event.code]:qwertyDirections[key]??azertyDirections[key];
+  const letterDirection=keyboardLayout==='auto'?autoDirection:keyboardLayout==='azerty'?azertyDirections[key]:qwertyDirections[key];
+  const direction=arrowDirections[event.key]??letterDirection;
+  if(direction!==undefined){event.preventDefault();turn(direction);}
+ }}>
   <div className="snake-heading"><h2>Snake</h2><span aria-live="polite">Today ◈ {snapshot?.earned??0} / 100</span></div>
-  <div className="snake-layout"><div ref={board} tabIndex={0} className={`snake-board ${motion?'snake-motion':''}`} role="group" aria-label="Snake board. Enter or Space to start or play again; arrow keys or WASD to move; Space to pause." onPointerDown={e=>{swipe.current={x:e.clientX,y:e.clientY};e.currentTarget.setPointerCapture(e.pointerId);}} onPointerUp={e=>{const from=swipe.current;swipe.current=null;if(!from)return;const x=e.clientX-from.x,y=e.clientY-from.y;if(Math.max(Math.abs(x),Math.abs(y))<12)return;turn(Math.abs(x)>Math.abs(y)?x>0?1:3:y>0?2:0);}} onPointerCancel={()=>{swipe.current=null;}}>
+  <div className="snake-layout" ref={layout}><div ref={board} tabIndex={0} className={`snake-board ${motion?'snake-motion':''}`} role="group" aria-label={`Snake board. Enter or Space to play again. Move with arrows or ${movementKeys}. Space to pause.`} onPointerDown={e=>{swipe.current={x:e.clientX,y:e.clientY};e.currentTarget.setPointerCapture(e.pointerId);}} onPointerUp={e=>{const from=swipe.current;swipe.current=null;if(!from)return;const x=e.clientX-from.x,y=e.clientY-from.y;if(Math.max(Math.abs(x),Math.abs(y))<12)return;turn(Math.abs(x)>Math.abs(y)?x>0?1:3:y>0?2:0);}} onPointerCancel={()=>{swipe.current=null;}}>
    <SnakeArtwork body={state.body} direction={state.direction} chip={state.apple} motion={motion&&running&&active&&!over}/>
    {(!running||over||frozen)&&<div className="snake-overlay"><strong>{frozen?'Account timed out':over?'Game over':snapshot?.session?'Paused':'Snake'}</strong><span>{over?`${state.score} ${state.score===1?'chip':'chips'}`:'1 diamond = 1 chip'}</span></div>}
-  </div><aside className="settings-card snake-controls"><div className="snake-score"><span>Collected</span><strong>{state.score}</strong></div><p>1 chip per diamond · up to 100 per day. Keep playing after the cap.</p><div className="game-actions"><button className="primary" disabled={busy||frozen||!snapshot||!!error} onClick={()=>running&&!over?pause():void start()}>{running&&!over?<><Pause size={15}/>Pause</>:<><Play size={15}/>{over?'Play again':snapshot?.session?'Resume':'Play'}</>}</button>{snapshot?.session&&!running&&!over&&<button className="secondary" disabled={busy||frozen||!!error} onClick={()=>void start(true)}><RotateCcw size={15}/>Restart</button>}</div>
-   <div className="snake-dpad" aria-label="Snake direction controls">{[{name:'Up',dir:0,Icon:ArrowUp},{name:'Left',dir:3,Icon:ArrowLeft},{name:'Down',dir:2,Icon:ArrowDown},{name:'Right',dir:1,Icon:ArrowRight}].map(({name,dir,Icon})=><button key={name} className={`snake-${name.toLowerCase()}`} aria-label={`Move ${name.toLowerCase()}`} disabled={!running||over||frozen} onClick={()=>turn(dir)}><Icon size={22}/></button>)}</div><small>Enter / Space to play or restart · Space to pause · Arrows / WASD · swipe</small>
+  </div><aside className="settings-card snake-controls" ref={controls}><div className="snake-score"><span>Collected</span><strong>{state.score}</strong></div><p>1 chip per diamond · up to 100 per day. Keep playing after the cap.</p><div className="game-actions"><button className="primary" disabled={busy||frozen||!snapshot||!!error} onClick={()=>running&&!over?pause():void start()}>{running&&!over?<><Pause size={15}/>Pause</>:<><Play size={15}/>{over?'Play again':snapshot?.session?'Resume':'Play'}</>}</button>{snapshot?.session&&!running&&!over&&<button className="secondary" disabled={busy||frozen||!!error} onClick={()=>void start(true)}><RotateCcw size={15}/>Restart</button>}</div>
+   <div className="snake-dpad" aria-label="Snake direction controls">{[{name:'Up',dir:0,Icon:ArrowUp},{name:'Left',dir:3,Icon:ArrowLeft},{name:'Down',dir:2,Icon:ArrowDown},{name:'Right',dir:1,Icon:ArrowRight}].map(({name,dir,Icon})=><button key={name} className={`snake-${name.toLowerCase()}`} aria-label={`Move ${name.toLowerCase()}`} disabled={!running||over||frozen} onClick={()=>turn(dir)}><Icon size={22}/></button>)}</div><label className="snake-keyboard">Keyboard<select aria-label="Snake keyboard layout" value={keyboardLayout} onChange={event=>{
+    const value=event.target.value as KeyboardLayout;setKeyboardLayout(value);
+    try{localStorage.setItem('multimarche-snake-layout',value);}catch{}
+   }}><option value="auto">Auto</option><option value="qwerty">QWERTY</option><option value="azerty">AZERTY</option></select></label><small>Enter / Space to play · Arrows / {movementKeys} · Swipe</small>
    {error&&<div className="snake-error"><p className="form-error" role="alert">{error}</p><div className="game-actions"><button className="secondary" disabled={busy||frozen} onClick={()=>{if(flight.current)return;flight.current=true;setBusy(true);void transport.current?.retry().then(()=>{if(!transport.current?.error)setError('');}).finally(()=>{flight.current=false;setBusy(false);});}}>Retry save</button><button className="text-button" disabled={busy} onClick={()=>{if(flight.current)return;flight.current=true;setBusy(true);void transport.current?.load().then(()=>{setError('');turns.current=[];}).catch(e=>setError(e.message)).finally(()=>{flight.current=false;setBusy(false);});}}>Reload game</button></div></div>}
   </aside></div>
  </section>;

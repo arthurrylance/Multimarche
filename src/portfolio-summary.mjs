@@ -16,7 +16,10 @@ export function positionSummaries(markets,positions,costs={}){
   });
   // Yes and No are alternative settlements, so the best case cannot add both payouts.
   const payout=Math.max(row.yes,row.no),profit=basis!==null?payout-basis:null;
-  return {...row,basis,outcomes,payout,profit,percent:profit!==null&&basis>0?profit/basis*100:null};
+  const price=Number(row.market.probability);
+  const value=row.market.status!=='resolved'&&row.market.price_available!==false&&row.market.probability!=null&&Number.isFinite(price)&&price>=0&&price<=1?row.yes*price+row.no*(1-price):null;
+  const unrealized=value!==null&&basis!==null?value-basis:null;
+  return {...row,basis,value,unrealized,outcomes,payout,profit,percent:profit!==null&&basis>0?profit/basis*100:null};
  }).sort((a,b)=>Number(a.market.status==='resolved')-Number(b.market.status==='resolved')||Date.parse(a.market.closes_at)-Date.parse(b.market.closes_at));
 }
 export function groupPositions(rows){

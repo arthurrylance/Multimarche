@@ -99,3 +99,4 @@ html[data-motion=on] .bet-carousel-viewport{scroll-behavior:smooth}
 
 .prediction-tabs,.group-option-tabs{scrollbar-width:none;-ms-overflow-style:none;overscroll-behavior-x:contain}
 .prediction-tabs::-webkit-scrollbar,.group-option-tabs::-webkit-scrollbar{display:none}
+.holding-investment>div+div{margin-top:5px}

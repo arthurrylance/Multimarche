@@ -7,7 +7,7 @@ function casino({active=null,available=1000,remaining=100,motion=true,defer=fals
  const supabase={rpc:async(name,args)=>{calls.push({name,args});if(name==='casino_state')return{data:snapshot};if(name==='casino_plinko_batch'){const results=Array.from({length:args.p_count},()=>({id:`round-${++serial}`,game:'plinko',stake:args.p_stake,payout:args.p_stake*.4,version:1,status:'settled',state:{path:[1,0,1,0,1,0,1,0],slot:4,multiplier:.4,outcome:'loss'}}));snapshot={...snapshot,available:snapshot.available-args.p_stake*args.p_count,remaining:snapshot.remaining-args.p_stake*args.p_count,recent:[...results,...snapshot.recent]};return{data:results};}if(name==='casino_start'){
   if(defer)await new Promise(r=>resume=r);if(fail&&!failed){failed=true;return{error:{message:'Network retry'}};}
   const r={id:`round-${++serial}`,game:args.p_game,stake:args.p_stake,payout:0,version:1,status:args.p_game==='blackjack'?'active':'settled',state:args.p_game==='blackjack'?{player:[0,4],dealer:[36,null],player_total:13}:args.p_game==='roulette'?{number:rouletteNumber,choice:args.p_choice,outcome:'win'}:{path:[1,0,1,0,1,0,1,0],slot:4,multiplier:.4,outcome:'loss'}};
-  if(r.game==='roulette'){const n=r.state.number,won=n!==0&&(args.p_choice==='red'?visuals.redNumbers.has(n):args.p_choice==='black'?!visuals.redNumbers.has(n):args.p_choice==='odd'?n%2===1:n%2===0);r.state.outcome=won?'win':'loss';r.payout=won?2*args.p_stake:0;}
+  if(r.game==='roulette'){const n=r.state.number,straight=args.p_choice==='green'||args.p_choice.startsWith('number:'),target=args.p_choice==='green'?0:Number(args.p_choice.slice(7)),won=straight?n===target:n!==0&&(args.p_choice==='red'?visuals.redNumbers.has(n):args.p_choice==='black'?!visuals.redNumbers.has(n):args.p_choice==='odd'?n%2===1:n%2===0);r.state.outcome=won?'win':'loss';r.payout=won?(straight?36:2)*args.p_stake:0;}
   snapshot={...snapshot,available:snapshot.available-args.p_stake+r.payout,remaining:snapshot.remaining-args.p_stake,active:r.status==='active'?r:null,recent:r.status==='settled'?[r,...snapshot.recent]:snapshot.recent};return{data:r};
  }if(name==='casino_blackjack'){const r={...snapshot.active,status:'settled',version:2,payout:2*snapshot.active.stake,state:{player:[36,32],dealer:[40,24],player_total:19,dealer_total:17,outcome:'win'}};snapshot={...snapshot,active:null,recent:[r,...snapshot.recent]};return{data:r};}return{};}};
  const SnakeStub=()=>null;const jsx=(type,props,key)=>({type,props:props??{},key}),module={exports:{}};vm.runInNewContext(compiled,{exports:module.exports,require:name=>name==='react'?hooks:name==='react/jsx-runtime'?{jsx,jsxs:jsx}:name==='./db'?{supabase}:name==='./casino.mjs'?visuals:name==='./SnakeGame'?{__esModule:true,default:SnakeStub}:new Proxy({},{get:()=>()=>null}),crypto:{randomUUID},setTimeout:(fn,delay)=>{timers.set(fn,{fn,delay});return fn;},clearTimeout:id=>timers.delete(id)});
@@ -27,7 +27,7 @@ test('roulette and plinko are playable with animations disabled',async()=>{
 });
 test('invalid stakes, timeouts and exhausted owned-credit/daily budgets cannot start games',async()=>{
  for(const opts of [{available:0},{remaining:0}]){const app=casino(opts);app.render();await settle();app.render();assert.equal(app.button('Deal').props.disabled,true);await app.button('Deal').props.onClick();assert.equal(app.calls.some(c=>c.name==='casino_start'),false);}
- const app=casino();app.render();await settle();app.render();app.field('Game stake').props.onChange({target:{value:'6'}});app.render();assert.equal(app.button('Deal').props.disabled,true);app.props.frozen=true;app.render();assert.equal(app.button('Account timed out').props.disabled,true);
+ const app=casino();app.render();await settle();app.render();app.field('Game stake').props.onChange({target:{value:'1.5'}});app.render();assert.equal(app.button('Deal').props.disabled,true);app.props.frozen=true;app.render();assert.equal(app.button('Account timed out').props.disabled,true);
 });
 test('an uncertain request keeps its nonce for retry rather than drawing a new result',async()=>{
  const app=casino({fail:true});app.render();await settle();app.render();await app.button('Deal').props.onClick();await settle();app.render();assert.match(app.text(),/Network retry/);await app.button('Deal').props.onClick();await settle();const starts=app.calls.filter(c=>c.name==='casino_start');assert.equal(starts.length,2);assert.equal(starts[0].args.p_request,starts[1].args.p_request);
@@ -87,4 +87,25 @@ test('disabling motion reveals immediately and restoring motion does not replay 
  const app=await startRoulette();app.props.motion=false;app.render();app.render();assert.match(nodeText(outcome(app)),/You won/);assert.equal(app.button('Spin').props.disabled,false);assert.equal(app.timers().length,0);
  app.props.motion=true;app.render();assert.equal(wheelNode(app).props.className.includes('has-result'),false);assert.match(nodeText(outcome(app)),/You won/);
  const immediate=await startRoulette({motion:false});assert.match(nodeText(outcome(immediate)),/You won/);assert.equal(immediate.timers().length,0);assert.equal(wheelNode(immediate).props.className.includes('has-result'),false);
+});
+
+
+test('advanced roulette sends only the chosen number/green bet and conceals its result until the wheel ends',async()=>{
+ for(const [choice,label,number,won] of [['green','Bet on green (0)',0,true],['number:17','Bet on number 17',17,true],['number:36','Bet on number 36',2,false]]){
+  const app=casino({rouletteNumber:number});app.render();await settle();app.render();app.button('Roulette').props.onClick();app.render();
+  assert.equal(app.nodes().filter(n=>n.type==='button'&&n.props['aria-label']?.startsWith('Bet on ')).length,37);
+  app.field('Game stake').props.onChange({target:{value:'2'}});app.field(label).props.onClick();app.render();assert.equal(app.field(label).props['aria-pressed'],true);assert.match(app.text(),/Payout if it wins\s*◈ 72/);
+  await app.button('Spin').props.onClick();await settle();app.render();const call=app.calls.find(c=>c.name==='casino_start');assert.equal(call.args.p_choice,choice);assert.deepEqual(Object.keys(call.args).sort(),['p_choice','p_game','p_request','p_stake']);assert.equal(call.args.p_stake,2);
+  assert.equal(nodeText(outcome(app)),'Spinning…');assert.equal(app.field(label).props.disabled,true);endWheel(app);assert.match(nodeText(outcome(app)),won?/You won.*70/:/Round over.*2/);
+ }
+});
+
+test('roulette and blackjack accept larger stakes up to the owned-credit or daily limit',async()=>{
+ for(const game of ['Blackjack','Roulette']){
+  const app=casino({available:40,remaining:25,motion:false});app.render();await settle();app.render();app.button(game).props.onClick();app.render();
+  const action=game==='Blackjack'?'Deal':'Spin';assert.equal(app.field('Game stake').props.max,25);
+  app.field('Game stake').props.onChange({target:{value:'26'}});app.render();assert.equal(app.button(action).props.disabled,true);
+  app.button('Max').props.onClick();app.render();assert.equal(app.field('Game stake').props.value,'25');assert.equal(app.button(action).props.disabled,false);
+  await app.button(action).props.onClick();await settle();assert.equal(app.calls.find(c=>c.name==='casino_start').args.p_stake,25);
+ }
 });
